@@ -13,10 +13,10 @@ pip install pyserial
 ```
 
 ### Run ###
-To use it, run kumbhm_simple.py:
+To use it, run main.py:
 
 ```
 #!bash
 
-python kumbhm_simple.py
+python main.py
 ```
