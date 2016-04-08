@@ -50,7 +50,8 @@ def rundumper(port):
     quit_commands = ['q', 'quit']
     run = True
     print('Reading '+port)
-    filename = 'data/dump'+port+time.strftime("%Y%m%d-%H%M%S")+'.txt'
+    portid = port.split('/')[-1]
+    filename = 'data/dump'+portid+time.strftime("%Y%m%d-%H%M%S")+'.txt'
     logger = KumbhMelaDumper(port, filename)
     while run:
         if sys.stdin.readline().strip().lower() in quit_commands:
