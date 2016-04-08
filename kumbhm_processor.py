@@ -7,6 +7,7 @@ Created on Mon Apr 04 14:55:32 2016
 
 import time
 import sys
+import os
 import base64
 
 class KumbhMelaProcessor:
@@ -19,6 +20,9 @@ class KumbhMelaProcessor:
         self.error_cnt = 0
         self.file_cnt = 0
         self.line_nr = 0
+        self.savedir = 'data/processed/'
+        if not os.path.exists(self.savedir):
+            os.makedirs(self.savedir)
             
     def process_file(self, infile):
         start_cnt = self.file_cnt
@@ -55,7 +59,7 @@ class KumbhMelaProcessor:
                 self.error_cnt += 1
                 print('error %d: at line %d,\n\terror code: %d' % (self.error_cnt, self.line_nr, self.current_data.errcode))
 #                print('\n'.join(self.serial_buffer[:self.serial_buffer_read_index]))
-            self.current_data.save('data/processed/%s-%d.dat' % (self.id, self.file_cnt))
+            self.current_data.save(self.savedir+'%s-%d.dat' % (self.id, self.file_cnt))
             self.file_cnt += 1
             self.current_data = None
             

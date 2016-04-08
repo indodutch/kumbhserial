@@ -9,6 +9,7 @@ import serial
 import time
 import sys
 import thread
+import os
 from serial_tools import serial_ports
 
 class KumbhMelaDumper:
@@ -51,6 +52,8 @@ def rundumper(port):
     run = True
     print('Reading '+port)
     portid = port.split('/')[-1]
+    if not os.path.exists('data/'):
+        os.makedirs('data/')
     filename = 'data/dump'+portid+time.strftime("%Y%m%d-%H%M%S")+'.txt'
     logger = KumbhMelaDumper(port, filename)
     while run:
