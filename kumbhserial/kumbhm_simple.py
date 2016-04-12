@@ -8,12 +8,16 @@ Created on Mon Apr 04 14:55:32 2016
 import serial
 import time
 import sys
-import thread
+try:
+    import thread
+except ImportError:
+    import _thread as thread
 import threading
 import base64
-from serial_tools import serial_ports
+from .serial_tools import serial_ports
 
-class KumbhMelaLogger:
+
+class KumbhMelaLogger(object):
     WAIT_FOR_DEVICE_TIMEOUT = 12
     WAIT_FOR_FINISH_READ = 2
     def __init__(self, port):

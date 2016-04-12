@@ -8,12 +8,18 @@ Created on Mon Apr 04 14:55:32 2016
 import serial
 import time
 import sys
-import thread
+try:
+    import thread
+except ImportError:
+    import _thread as thread
 import os
-from serial_tools import serial_ports
+from .serial_tools import serial_ports
 
-class KumbhMelaDumper:
+
+class KumbhMelaDumper(object):
+
     WAIT_FOR_DEVICE_TIMEOUT = 12
+
     def __init__(self, port, filename):
         try:
             self.comm = serial.Serial(port, 921600, timeout=1)
@@ -38,7 +44,7 @@ class KumbhMelaDumper:
         
     def heartbeat_thread(self):
         while self.run:
-            self.comm.write('@')
+            self.comm.write(b'@')
             time.sleep(1)
         print('heartbeat stopped')
             
@@ -46,7 +52,8 @@ class KumbhMelaDumper:
         if self.run:
             self.recv_till = time.time() + self.WAIT_FOR_DEVICE_TIMEOUT
             self.run = False
-        
+
+
 def rundumper(port):
     quit_commands = ['q', 'quit']
     run = True
@@ -65,7 +72,8 @@ def rundumper(port):
                 time.sleep(1)
             print('Stopped.')
     return run, filename
-    
+
+
 def dumper_main():
     quit_commands = ['q', 'quit']
     run = True
