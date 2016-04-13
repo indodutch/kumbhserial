@@ -13,7 +13,7 @@ try:
 except ImportError:
     import _thread as thread
 import os
-from .serial_tools import serial_ports
+from .serial_tools import choose_serial_port
 
 
 class KumbhMelaDumper(object):
@@ -75,30 +75,16 @@ def rundumper(port):
 
 
 def dumper_main():
-    quit_commands = ['q', 'quit']
     run = True
     fname = ''
     port = ''
-    while run:
-        ports = serial_ports()
-        if len(ports) == 0:
-            print('No serial device detected, please plug in bracelet.')
-            if sys.stdin.readline().strip().lower() in quit_commands:
-                run = False
-            continue
-        print('Pick a serial port:%s' % (' '.join(['\n%d: %s' % (i, ports[i]) for i in range(len(ports))]),))
-        textin = sys.stdin.readline().strip().lower()
-        if textin in quit_commands:
-            run = False
-        elif textin in [p.lower() for p in ports]:
-            port = ports[[p.lower() for p in ports].index(textin)]
+    try:
+        while run:
+            port = choose_serial_port()
             run, fname = rundumper(port)
-        else:
-            try:
-                index = int(textin)
-                run, fname = rundumper(ports[index])
-            except:
-                print('Given port not in the list. Try again. (q or quit to quit)')
+    except ValueError:
+        print("Quit.")
+
     return fname, port
 
 if __name__ == "__main__":

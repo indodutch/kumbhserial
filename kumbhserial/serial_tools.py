@@ -39,5 +39,29 @@ def serial_ports():
     return result
 
 
+def choose_serial_port():
+    quit_commands = ('q', 'quit')
+
+    while True:
+        ports = serial_ports()
+        if len(ports) == 0:
+            print('No serial device detected, please plug in bracelet.')
+            if sys.stdin.readline().strip().lower() in quit_commands:
+                raise ValueError("Quit")
+        print('Pick a serial port:%s' % (' '.join(
+            ['\n%d: %s' % (i, l) for i, l in enumerate(ports)]),))
+        text_in = sys.stdin.readline().strip().lower()
+        if text_in in quit_commands:
+            raise ValueError("Quit")
+        elif text_in in [p.lower() for p in ports]:
+            return ports[[p.lower() for p in ports].index(text_in)]
+        else:
+            try:
+                index = int(text_in)
+                return ports[index]
+            except (ValueError, IndexError):
+                print('Given port not in the list. Try again. '
+                      '(type q or quit to quit)')
+
 if __name__ == '__main__':
     print(serial_ports())

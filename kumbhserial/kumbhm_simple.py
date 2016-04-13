@@ -14,12 +14,13 @@ except ImportError:
     import _thread as thread
 import threading
 import base64
-from .serial_tools import serial_ports
+from .serial_tools import choose_serial_port
 
 
 class KumbhMelaLogger(object):
     WAIT_FOR_DEVICE_TIMEOUT = 12
     WAIT_FOR_FINISH_READ = 2
+
     def __init__(self, port):
         try:
             self.comm = serial.Serial(port, 921600, timeout=1)
@@ -201,27 +202,13 @@ def runlogger(port):
             print('Stopped.')
     return run
 
+
 if __name__ == "__main__":
-    quit_commands = ['q', 'quit']
     run = True
-    while run:
-        ports = serial_ports()
-        if len(ports) == 0:
-            print('No serial device detected, please plug in bracelet.')
-            if sys.stdin.readline().strip().lower() in quit_commands:
-                run = False
-            continue
-        print('Pick a serial port:%s' % (' '.join(['\n%d: %s' % (i, ports[i]) for i in range(len(ports))]),))
-        textin = sys.stdin.readline().strip().lower()
-        if textin in quit_commands:
-            run = False
-        elif textin in [p.lower() for p in ports]:
-            port = ports[[p.lower() for p in ports].index(textin)]
-            run = runlogger(port)
-        else:
-            try:
-                index = int(textin)
-                run = runlogger(ports[index])
-            except:
-                print('Given port not in the list. Try again. (q or quit to quit)')
+    try:
+        while run:
+            port = choose_serial_port()
+            run = run_logger(port)
+    except ValueError:
+        print("Quit.")
     
