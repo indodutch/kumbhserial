@@ -29,18 +29,20 @@ class KumbhMelaDumper(object):
         self.port = port
         self.run = True
         self.stopped = False
-        self.file = open(filename, 'wb')
+        self.started = False
+        self.filename = filename
         self.recv_till = time.time()
         thread.start_new_thread(self.serial_recv_thread, ())
         thread.start_new_thread(self.heartbeat_thread, ())
             
     def serial_recv_thread(self):
         try:
-            while self.run or time.time() < self.recv_till:
-                line = self.comm.readline()
-                self.file.write(line)
+            with open(self.filename, 'wb') as f:
+                self.started = True
+                while self.run or time.time() < self.recv_till:
+                    line = self.comm.readline()
+                    f.write(line)
             print('read stopped')
-            self.file.close()
         finally:
             self.stopped = True
 
@@ -61,17 +63,21 @@ def run_dumper(port, tmp_dir='data'):
     port_id = port.split('/')[-1]
     if not os.path.exists(tmp_dir):
         os.makedirs(tmp_dir)
-    fname = os.path.join(tmp_dir, 'dump{0}{1}.txt'.format(
+    fname = os.path.join(tmp_dir, 'dump-{0}{1}.txt'.format(
         port_id, time.strftime("%Y%m%d-%H%M%S")))
     logger = KumbhMelaDumper(port, fname)
     try:
+        print('Starting {0}...'.format(port))
+        while not logger.started and not logger.stopped:
+            time.sleep(0.1)
+        print('Started {0}.'.format(port))
         wait_for_user_quit()
     except ValueError:
         print('Stopping {0}...'.format(port))
         logger.stop()
         while not logger.stopped:
             time.sleep(1)
-        print('Stopped.')
+        print('Stopped {0}.'.format(port))
     finally:
         return fname
 
