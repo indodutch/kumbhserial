@@ -14,7 +14,7 @@ except ImportError:
     import _thread as thread
 import threading
 import base64
-from .serial_tools import choose_serial_port
+from .serial_tools import choose_serial_port, wait_for_user_quit
 
 
 class KumbhMelaLogger(object):
@@ -188,26 +188,23 @@ class DataRead(object):
 
 
 def run_logger(port):
-    run = True
-    print('Reading '+port)
+    print('Reading ' + port + '. Type q or quit to quit.')
     logger = KumbhMelaLogger(port)
-    while run:
-        if sys.stdin.readline().strip().lower() in quit_commands:
-            run = False
-            print('Stopping '+port)
-            logger.stop()
-            while not logger.stopped:
-                time.sleep(1)
-            print('Stopped.')
-    return run
+    try:
+        wait_for_user_quit()
+    except ValueError:
+        print('Stopping ' + port)
+        logger.stop()
+        while not logger.stopped:
+            time.sleep(1)
+        print('Stopped.')
 
 
 if __name__ == "__main__":
-    run = True
     try:
-        while run:
-            port = choose_serial_port()
-            run = run_logger(port)
+        chosen_port = choose_serial_port()
+        run_logger(chosen_port)
     except ValueError:
         print("Quit.")
-    
+    except KeyboardInterrupt:
+        print("Force quit.")

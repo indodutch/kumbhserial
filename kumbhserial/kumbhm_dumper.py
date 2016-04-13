@@ -13,7 +13,7 @@ try:
 except ImportError:
     import _thread as thread
 import os
-from .serial_tools import choose_serial_port
+from .serial_tools import choose_serial_port, wait_for_user_quit
 
 
 class KumbhMelaDumper(object):
@@ -41,7 +41,7 @@ class KumbhMelaDumper(object):
         print('read stopped')
         self.file.close()
         self.stopped = True
-        
+
     def heartbeat_thread(self):
         while self.run:
             self.comm.write(b'@')
@@ -54,40 +54,35 @@ class KumbhMelaDumper(object):
             self.run = False
 
 
-def rundumper(port):
-    quit_commands = ['q', 'quit']
-    run = True
-    print('Reading '+port)
-    portid = port.split('/')[-1]
+def run_dumper(port):
+    print('Reading ' + port + '. Type q or quit to quit.')
+    port_id = port.split('/')[-1]
     if not os.path.exists('data/'):
         os.makedirs('data/')
-    filename = 'data/dump'+portid+time.strftime("%Y%m%d-%H%M%S")+'.txt'
-    logger = KumbhMelaDumper(port, filename)
-    while run:
-        if sys.stdin.readline().strip().lower() in quit_commands:
-            run = False
-            print('Stopping '+port)
-            logger.stop()
-            while not logger.stopped:
-                time.sleep(1)
-            print('Stopped.')
-    return run, filename
+    fname = 'data/dump' + port_id + time.strftime("%Y%m%d-%H%M%S") + '.txt'
+    logger = KumbhMelaDumper(port, fname)
+    try:
+        wait_for_user_quit()
+    except ValueError:
+        print('Stopping ' + port)
+        logger.stop()
+        while not logger.stopped:
+            time.sleep(1)
+        print('Stopped.')
+
+    return filename
 
 
 def dumper_main():
-    run = True
-    fname = ''
-    port = ''
     try:
-        while run:
-            port = choose_serial_port()
-            run, fname = rundumper(port)
+        chosen_port = choose_serial_port()
+        return run_dumper(chosen_port)
     except ValueError:
         print("Quit.")
-
-    return fname, port
+    except KeyboardInterrupt:
+        print("Force quit.")
 
 if __name__ == "__main__":
-    fname, _ = dumper_main()
-    if fname:
-        print('serial data written into '+fname)
+    filename = dumper_main()
+    if filename:
+        print('serial data written into ' + filename)
