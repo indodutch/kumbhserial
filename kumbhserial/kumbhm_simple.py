@@ -61,10 +61,10 @@ class KumbhMelaLogger(object):
         while self.run or time.time() < self.recv_till:
             line = self.comm.readline()
             if len(line) < 1:
-                #nothing arrived within the timeout
+                # nothing arrived within the timeout
                 continue
             if line[-1] != '\n':
-                #an incomplete line arrived before the timeout hit in
+                # an incomplete line arrived before the timeout hit in
                 line += self.comm.readline()
             line = line.strip()
 #            if len(line) < 1:
@@ -80,7 +80,7 @@ class KumbhMelaLogger(object):
                 try:
                     line = self.serial_buffer[self.serial_buffer_read_index]
                 except IndexError:
-                    #data not ready
+                    # data not ready
                     continue
                 self.serial_buffer_read_index += 1
             if len(line) < 1:
@@ -90,7 +90,7 @@ class KumbhMelaLogger(object):
                 self.current_data = DataRead(line[1:])
             elif (line[0] in ['0', '1', '2']) and (not self.current_data is None): #maximum line address is 279620 with full 4MB data
                 if len(line) != 29:
-                    #print(len(line), line)
+                    # print(len(line), line)
                     self.handle_error(10)
                 else:
                     try:
@@ -107,33 +107,34 @@ class KumbhMelaLogger(object):
         if self.serial_buffer_read_index != 0:
             print('serial read interrupted\nbuffer len: %d, read index: %d' % (len(self.serial_buffer), self.serial_buffer_read_index))
         self.stopped = True
-        
+
     def heartbeat_thread(self):
         while self.run:
-            self.comm.write('@')
+            self.comm.write(b'@')
             time.sleep(1)
         print('heartbeat stopped')
-            
+
     def handle_error(self, errcode=0):
         if self.current_data:
             self.current_data.error(errcode)
             self.save_data()
-            
+
     def stop(self):
         if self.run:
             self.recv_till = time.time() + self.WAIT_FOR_DEVICE_TIMEOUT
             self.read_till = self.recv_till + self.WAIT_FOR_FINISH_READ
             self.run = False
-                
-class DataRead:
+
+
+class DataRead(object):
     def __init__(self, device_id):
         self.id = device_id
-        self.data=[[],[]]
+        self.data = [[], []]
         self.system = self.data[0]
         self.detections = self.data[1]
         self.OK = True
         self.errcode = -1
-        
+
     def error(self, errcode=0):
         self.OK = False
         self.errcode = errcode
@@ -141,26 +142,24 @@ class DataRead:
     def __str__(self):
         if self.OK:
             text = 'device_id: %s\nsystem:\n' % (self.id,)
-            for line in range(len(self.system)):
-#                text += '%d:\t%s\n' % (line, base64.b64encode(self.system[line]))
-                text += '%d:\t%s\n' % (line, self.system[line])
+            for number, line in enumerate(self.system):
+                text += '%d:\t%s\n' % (number, line)
             text += '\ndetections:\n'
-            for line in range(len(self.detections)):
-#                text += '%d:\t%s\n' % (line, base64.b64encode(self.detections[line]))
-                text += '%d:\t%s\n' % (line, self.detections[line])
+            for number, line in enumerate(self.detections):
+                text += '%d:\t%s\n' % (number, line)
             return text
-        return 'Corrupted reading!!\n\n'
-        
+        else:
+            return 'Corrupted reading!!\n\n'
+
     def save(self, fname):
-        f = open(fname+'s', 'wb')
-        for line in self.system:
-            f.write(line)
-        f.close()
-        f = open(fname+'d', 'wb')
-        for line in self.detections:
-            f.write(line)
-        f.close()
-            
+        with open(fname+'s', 'wb') as f:
+            for line in self.system:
+                f.write(line)
+
+        with open(fname+'d', 'wb') as f:
+            for line in self.detections:
+                f.write(line)
+
     def add_data(self, line_id, data):
         if data[0] == ':':
             is_detection = True
@@ -170,7 +169,7 @@ class DataRead:
             self.error(1)
             return
             
-        if len(self.data[is_detection]) > 0 and line_id > len(self.data[is_detection]):
+        if 0 < len(self.data[is_detection]) < line_id:
             self.error(2)
             return
             
@@ -178,17 +177,17 @@ class DataRead:
             ddata = base64.b64decode(data[1:]+'==')
         except TypeError:
             self.error(3)
-            return
-            
-        if sum(bytearray(ddata))%256 != 0:
-            self.error(4)
-            
-        while line_id > len(self.data[is_detection])-1:
-            self.data[is_detection].append(chr(255)*15)
+        else:
+            if sum(bytearray(ddata)) % 256 != 0:
+                self.error(4)
 
-        self.data[is_detection][line_id] = ddata[1:]
-        
-def runlogger(port):
+            while line_id > len(self.data[is_detection]) - 1:
+                self.data[is_detection].append([chr(255)]*15)
+
+            self.data[is_detection][line_id] = ddata[1:]
+
+
+def run_logger(port):
     run = True
     print('Reading '+port)
     logger = KumbhMelaLogger(port)
