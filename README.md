@@ -4,21 +4,18 @@ Python implementation of the data logging example code.
 
 ### Setup ###
 
-To run it you will need pyserial:
+Install requirements first
 
-```
-#!bash
-
-pip install pyserial
+```shell
+pip install -r requirements.txt
+pip install -e .
 ```
 
 ### Run ###
-To use it, run main.py:
+To use it, run `kumbhserial`:
 
-```
-#!bash
-
-python main.py
+```shell
+kumbhserial [DEVICE_NUM]
 ```
 
 ### License ###

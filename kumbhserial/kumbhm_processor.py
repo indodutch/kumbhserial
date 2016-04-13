@@ -10,8 +10,9 @@ import sys
 import os
 import base64
 
-class KumbhMelaProcessor:
-    def __init__(self, id_text=''):
+
+class KumbhMelaProcessor(object):
+    def __init__(self, id_text='', save_dir='data/processed/'):
         if len(id_text) == 0:
             self.id = time.strftime("%Y%m%d-%H%M%S")
         else:
@@ -20,9 +21,9 @@ class KumbhMelaProcessor:
         self.error_cnt = 0
         self.file_cnt = 0
         self.line_nr = 0
-        self.savedir = 'data/processed/'
-        if not os.path.exists(self.savedir):
-            os.makedirs(self.savedir)
+        self.save_dir = save_dir
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir)
             
     def process_file(self, infile):
         start_cnt = self.file_cnt
@@ -59,7 +60,7 @@ class KumbhMelaProcessor:
                 self.error_cnt += 1
                 print('error %d: at line %d,\n\terror code: %d' % (self.error_cnt, self.line_nr, self.current_data.errcode))
 #                print('\n'.join(self.serial_buffer[:self.serial_buffer_read_index]))
-            self.current_data.save(self.savedir+'%s-%d.dat' % (self.id, self.file_cnt))
+            self.current_data.save(self.save_dir+'%s-%d.dat' % (self.id, self.file_cnt))
             self.file_cnt += 1
             self.current_data = None
             
@@ -67,8 +68,9 @@ class KumbhMelaProcessor:
         if self.current_data:
             self.current_data.error(errcode)
             self.save_data()
-                
-class DataRead:
+
+
+class DataRead(object):
     def __init__(self, device_id):
         self.id = device_id
         self.data=[[],[]]
@@ -85,11 +87,9 @@ class DataRead:
         if self.OK:
             text = 'device_id: %s\nsystem:\n' % (self.id,)
             for line in range(len(self.system)):
-#                text += '%d:\t%s\n' % (line, base64.b64encode(self.system[line]))
                 text += '%d:\t%s\n' % (line, self.system[line])
             text += '\ndetections:\n'
             for line in range(len(self.detections)):
-#                text += '%d:\t%s\n' % (line, base64.b64encode(self.detections[line]))
                 text += '%d:\t%s\n' % (line, self.detections[line])
             return text
         return 'Corrupted reading!!\n\n'
@@ -113,19 +113,19 @@ class DataRead:
             self.error(1)
             return
             
-        if len(self.data[is_detection]) > 0 and line_id > len(self.data[is_detection]):
+        if 0 < len(self.data[is_detection]) < line_id:
             self.error(2)
             return
-            
+
         try:
             ddata = base64.b64decode(data[1:]+'==')
         except TypeError:
             self.error(3)
             return
-            
+
         if sum(bytearray(ddata))%256 != 0:
             self.error(4)
-            
+
         while line_id > len(self.data[is_detection])-1:
             self.data[is_detection].append(chr(255)*15)
 
