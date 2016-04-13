@@ -12,15 +12,10 @@ pip install -e .
 ```
 
 ### Run ###
-To use it, run main.py:
+To use it, run `kumbhserial`:
 
 ```shell
 kumbhserial [DEVICE_NUM]
-```
-```
-#!bash
-
-python main.py
 ```
 
 ### License ###
