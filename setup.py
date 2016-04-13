@@ -28,7 +28,7 @@ setup(name='kumbhserial',
       author='Zoltan Beck',
       author_email='zb1f12@soton.ac.uk',
       packages=['kumbhserial'],
-      install_requires=['pyserial'],
+      install_requires=['pyserial', 'docopt'],
       tests_require=['nose', 'pyflakes', 'pep8'],
       entry_points={
         'console_scripts': [
