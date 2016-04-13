@@ -1,29 +1,3 @@
-# README #
-
-Python implementation of the data logging example code.
-
-### Setup ###
-
-Install requirements first
-
-```shell
-pip install -r requirements.txt
-pip install -e .
-```
-
-### Run ###
-To use it, run main.py:
-
-```shell
-kumbhserial [DEVICE_NUM]
-```
-```
-#!bash
-
-python main.py
-```
-
-### License ###
 Copyright 2016 Zoltan Beck
 
 Licensed under the Apache License, Version 2.0 (the "License");
