@@ -63,17 +63,41 @@ def choose_serial_port():
                 ['\n%d: %s' % (i, l) for i, l in enumerate(ports)]),))
 
             text = text_in()
-            if text in [p.lower() for p in ports]:
-                return ports[[p.lower() for p in ports].index(text)]
-
             try:
-                return ports[int(text)]
+                return select_value_from_list(text, ports)
             except (ValueError, IndexError):
                 print('Given port not in the list. Try again.')
         else:
             print('No serial device detected, please plug in bracelet.\n'
                   'Press ENTER to retry, type q or quit to quit).')
             text_in()
+
+
+def resolve_serial_port(name):
+    ports = serial_ports()
+    try:
+        return select_value_from_list(name, ports)
+    except (ValueError, IndexError):
+        port_strs = ['{0}: {1}'.format(i, p) for i, p in enumerate(ports)]
+        raise ValueError('Device number invalid, choose from:\n* {0}'.format(
+            '\n* '.join(port_strs)))
+
+
+def select_value_from_list(text, value_list):
+    """
+    :param text: value (case insensitive) or index of value list or None
+    :param value_list: list of strings to choose from
+    :return: chosen value, or if text is None, None
+    :raises ValueError: if the string is not a valid value and not an index
+    :raises IndexError: if given index is invalid
+    """
+    if text is None:
+        return None
+    if text in [p.lower() for p in value_list]:
+        return value_list[[p.lower() for p in value_list].index(text)]
+    else:
+        return value_list[int(text)]
+
 
 if __name__ == '__main__':
     print(serial_ports())

@@ -54,29 +54,32 @@ class KumbhMelaDumper(object):
             self.run = False
 
 
-def run_dumper(port):
+def run_dumper(port, tmp_dir='data'):
     print('Reading ' + port + '. Type q or quit to quit.')
     port_id = port.split('/')[-1]
-    if not os.path.exists('data/'):
-        os.makedirs('data/')
-    fname = 'data/dump' + port_id + time.strftime("%Y%m%d-%H%M%S") + '.txt'
+    if not os.path.exists(tmp_dir):
+        os.makedirs(tmp_dir)
+    fname = os.path.join(tmp_dir, 'dump{0}{1}.txt'.format(
+        port_id, time.strftime("%Y%m%d-%H%M%S")))
     logger = KumbhMelaDumper(port, fname)
     try:
         wait_for_user_quit()
     except ValueError:
-        print('Stopping ' + port)
+        print('Stopping {0}...'.format(port))
         logger.stop()
         while not logger.stopped:
             time.sleep(1)
         print('Stopped.')
+    finally:
+        return fname
 
-    return filename
 
-
-def dumper_main():
+def dumper_main(chosen_port=None, tmp_dir='data'):
     try:
-        chosen_port = choose_serial_port()
-        return run_dumper(chosen_port)
+        if chosen_port is None:
+            chosen_port = choose_serial_port()
+
+        return run_dumper(chosen_port, tmp_dir=tmp_dir)
     except ValueError:
         print("Quit.")
     except KeyboardInterrupt:
