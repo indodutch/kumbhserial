@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-# eStep
-#
-# Copyright 2015 Netherlands eScience Center
+# Copyright 2016 Zoltan Beck
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""eStep utilities"""
+"""Kumbh Mela serial device reader"""
 
 try:
     from setuptools import setup
