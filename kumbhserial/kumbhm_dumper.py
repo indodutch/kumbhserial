@@ -35,12 +35,14 @@ class KumbhMelaDumper(object):
         thread.start_new_thread(self.heartbeat_thread, ())
             
     def serial_recv_thread(self):
-        while self.run or time.time() < self.recv_till:
-            line = self.comm.readline()
-            self.file.write(line)
-        print('read stopped')
-        self.file.close()
-        self.stopped = True
+        try:
+            while self.run or time.time() < self.recv_till:
+                line = self.comm.readline()
+                self.file.write(line)
+            print('read stopped')
+            self.file.close()
+        finally:
+            self.stopped = True
 
     def heartbeat_thread(self):
         while self.run:

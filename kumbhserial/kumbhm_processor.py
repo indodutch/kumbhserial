@@ -68,8 +68,9 @@ class KumbhMelaProcessor(object):
         if self.current_data:
             self.current_data.error(errcode)
             self.save_data()
-                
-class DataRead:
+
+
+class DataRead(object):
     def __init__(self, device_id):
         self.id = device_id
         self.data=[[],[]]
