@@ -39,11 +39,6 @@ def serial_ports():
     return result
 
 
-def wait_for_user_quit(quit_commands=('q', 'quit')):
-    while True:
-        text_in(quit_commands)
-
-
 def text_in(quit_commands=('q', 'quit')):
     try:
         text = sys.stdin.readline().strip().lower()

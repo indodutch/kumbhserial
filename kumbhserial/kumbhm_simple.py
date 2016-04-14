@@ -14,34 +14,46 @@ except ImportError:
     import _thread as thread
 import threading
 import base64
-from .serial_tools import choose_serial_port, wait_for_user_quit
+from .serial_tools import choose_serial_port
+from .kumbhm_dumper import run_reader
 
 
-class KumbhMelaLogger(object):
-    WAIT_FOR_DEVICE_TIMEOUT = 12
+class KumbhMelaInterpreter(threading.Thread):
     WAIT_FOR_FINISH_READ = 2
 
-    def __init__(self, port):
-        try:
-            self.comm = serial.Serial(port, 921600, timeout=1)
-        except serial.SerialException as e:
-            print(e)
-            sys.exit()
-        self.port = port
-        self.run = True
-        self.stopped = False
-        self.current_data = None        
+    def __init__(self):
+        super(KumbhMelaInterpreter, self).__init__()
+        self.is_done = False
+        self.current_data = None
         self.error_cnt = 0
         self.file_cnt = 0
-        self.recv_till = time.time()
         self.read_till = time.time()
         self.serial_buffer = []
         self.serial_buffer_lock = threading.Lock()
         self.serial_buffer_read_index = 0
-        thread.start_new_thread(self.serial_recv_thread, ())
-        thread.start_new_thread(self.read_thread, ())
-        thread.start_new_thread(self.heartbeat_thread, ())
-                
+        self.partial_line = None
+
+    def append_line(self, data):
+        if len(data) < 1:
+            # nothing arrived within the timeout
+            return
+
+        if self.partial_line is not None:
+            data = self.partial_line + data
+            self.partial_line = None
+
+        if data[-1] != '\n':
+            # an incomplete line arrived before the timeout hit in
+            self.partial_line = data
+        else:
+            data = data.strip()
+#            if len(line) < 1:
+#                #empty line somehow...
+#                print('empty line')
+#                continue
+        with self.serial_buffer_lock:
+            self.serial_buffer.append(data)
+
     def save_data(self):
         if self.current_data:
             if not self.current_data.OK:
@@ -56,26 +68,9 @@ class KumbhMelaLogger(object):
                 print(len(self.serial_buffer))
             self.serial_buffer_read_index = 0
             self.current_data = None
-            
-    def serial_recv_thread(self):
-        while self.run or time.time() < self.recv_till:
-            line = self.comm.readline()
-            if len(line) < 1:
-                # nothing arrived within the timeout
-                continue
-            if line[-1] != '\n':
-                # an incomplete line arrived before the timeout hit in
-                line += self.comm.readline()
-            line = line.strip()
-#            if len(line) < 1:
-#                #empty line somehow...
-#                print('empty line')
-#                continue
-            with self.serial_buffer_lock:
-                self.serial_buffer.append(line)
-        
-    def read_thread(self):
-        while self.run or time.time() < self.read_till:
+
+    def run(self):
+        while not self.is_done or time.time() < self.read_till:
             with self.serial_buffer_lock:
                 try:
                     line = self.serial_buffer[self.serial_buffer_read_index]
@@ -88,7 +83,9 @@ class KumbhMelaLogger(object):
             if line[0] == '>':
                 self.save_data()
                 self.current_data = DataRead(line[1:])
-            elif (line[0] in ['0', '1', '2']) and (not self.current_data is None): #maximum line address is 279620 with full 4MB data
+            # maximum line address is 279620 with full 4MB data
+            elif ((line[0] in ['0', '1', '2']) and
+                      (self.current_data is not None)):
                 if len(line) != 29:
                     # print(len(line), line)
                     self.handle_error(10)
@@ -105,25 +102,19 @@ class KumbhMelaLogger(object):
         print('read stopped')
         self.save_data()
         if self.serial_buffer_read_index != 0:
-            print('serial read interrupted\nbuffer len: %d, read index: %d' % (len(self.serial_buffer), self.serial_buffer_read_index))
-        self.stopped = True
-
-    def heartbeat_thread(self):
-        while self.run:
-            self.comm.write(b'@')
-            time.sleep(1)
-        print('heartbeat stopped')
+            print('serial read interrupted')
+            print('buffer len: {}, read index: {}'.format(
+                len(self.serial_buffer), self.serial_buffer_read_index))
 
     def handle_error(self, errcode=0):
         if self.current_data:
             self.current_data.error(errcode)
             self.save_data()
 
-    def stop(self):
-        if self.run:
-            self.recv_till = time.time() + self.WAIT_FOR_DEVICE_TIMEOUT
-            self.read_till = self.recv_till + self.WAIT_FOR_FINISH_READ
-            self.run = False
+    def done(self):
+        if not self.is_done:
+            self.read_till = self.WAIT_FOR_FINISH_READ
+            self.is_done = True
 
 
 class DataRead(object):
@@ -188,19 +179,14 @@ class DataRead(object):
 
 
 def run_logger(port):
-    print('Reading ' + port + '. Type q or quit to quit.')
-    logger = KumbhMelaLogger(port)
-    try:
-        wait_for_user_quit()
-    except ValueError:
-        print('Stopping ' + port)
-        logger.stop()
-        while not logger.stopped:
-            time.sleep(1)
-        print('Stopped.')
+    logger = KumbhMelaInterpreter()
+    logger.start()
+    run_reader(port, logger)
+    logger.done()
+    logger.join(KumbhMelaInterpreter.WAIT_FOR_FINISH_READ + 1)
 
 
-if __name__ == "__main__":
+def main():
     try:
         chosen_port = choose_serial_port()
         run_logger(chosen_port)
@@ -208,3 +194,9 @@ if __name__ == "__main__":
         print("Quit.")
     except KeyboardInterrupt:
         print("Force quit.")
+    except serial.SerialException as e:
+        print("Cannot start serial connection: {0}".format(e))
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

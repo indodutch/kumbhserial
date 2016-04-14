@@ -32,7 +32,8 @@ setup(name='kumbhserial',
       tests_require=['nose', 'pyflakes', 'pep8'],
       entry_points={
         'console_scripts': [
-            'kumbhserial = kumbhserial.main:main'
+            'kumbhserial = kumbhserial.main:main',
+            'kumbhsimple = kumbhserial.kumbhm_simple:main'
         ]
       },
       classifiers=[

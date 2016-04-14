@@ -13,6 +13,7 @@ from .serial_tools import resolve_serial_port
 from .version import __version__
 import sys
 import docopt
+import serial
 
 
 def main(argv=sys.argv[1:]):
@@ -36,7 +37,12 @@ def main(argv=sys.argv[1:]):
         print(ex, file=sys.stderr)
         sys.exit(1)
 
-    dumpfile = dumper_main(chosen_port, tmp_dir=arguments['--tmp'])
+    try:
+        dumpfile = dumper_main(chosen_port, tmp_dir=arguments['--tmp'])
+    except serial.SerialException as e:
+        print("Cannot start serial connection: {0}".format(e))
+        sys.exit(1)
+
     if dumpfile:
         fid = os.path.splitext(os.path.basename(dumpfile))[0]
         proc = KumbhMelaProcessor(fid)
