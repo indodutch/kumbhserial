@@ -7,9 +7,9 @@ Created on Fri Apr 08 12:13:28 2016
 from __future__ import print_function
 
 import os
-from .kumbhm_dumper import dumper_main
+from .raw_dump import dumper_main
 from .kumbhm_processor import KumbhMelaProcessor
-from .serial_tools import resolve_serial_port
+from .ports import resolve_serial_port
 from .version import __version__
 import sys
 import docopt

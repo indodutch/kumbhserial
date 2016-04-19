@@ -8,6 +8,7 @@ Created on Thu Apr 07 17:04:39 2016
 import sys
 import glob
 import serial
+from .helpers import text_in, select_value_from_list
 
 
 def serial_ports():
@@ -39,16 +40,6 @@ def serial_ports():
     return result
 
 
-def text_in(quit_commands=('q', 'quit')):
-    try:
-        text = sys.stdin.readline().strip().lower()
-        if text in quit_commands:
-            raise ValueError('Quit')
-        return text
-    except KeyboardInterrupt:
-        raise ValueError('Quit')
-
-
 def choose_serial_port():
     while True:
         ports = serial_ports()
@@ -76,22 +67,6 @@ def resolve_serial_port(name):
         port_strs = ['{0}: {1}'.format(i, p) for i, p in enumerate(ports)]
         raise ValueError('Device number invalid, choose from:\n* {0}'.format(
             '\n* '.join(port_strs)))
-
-
-def select_value_from_list(text, value_list):
-    """
-    :param text: value (case insensitive) or index of value list or None
-    :param value_list: list of strings to choose from
-    :return: chosen value, or if text is None, None
-    :raises ValueError: if the string is not a valid value and not an index
-    :raises IndexError: if given index is invalid
-    """
-    if text is None:
-        return None
-    if text in [p.lower() for p in value_list]:
-        return value_list[[p.lower() for p in value_list].index(text)]
-    else:
-        return value_list[int(text)]
 
 
 if __name__ == '__main__':

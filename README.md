@@ -1,6 +1,6 @@
 # README #
 
-Python implementation of the data logging example code.
+Python 3 implementation of the data logging example code.
 
 ### Setup ###
 

@@ -8,14 +8,11 @@ Created on Mon Apr 04 14:55:32 2016
 import serial
 import time
 import sys
-try:
-    import thread
-except ImportError:
-    import _thread as thread
 import threading
 import base64
-from .serial_tools import choose_serial_port
-from .kumbhm_dumper import run_reader
+from queue import Queue
+from .ports import choose_serial_port
+from .raw_dump import run_reader
 
 
 class KumbhMelaInterpreter(threading.Thread):
@@ -28,13 +25,11 @@ class KumbhMelaInterpreter(threading.Thread):
         self.error_cnt = 0
         self.file_cnt = 0
         self.read_till = time.time()
-        self.serial_buffer = []
-        self.serial_buffer_lock = threading.Lock()
-        self.serial_buffer_read_index = 0
+        self.read_queue = Queue()
         self.partial_line = None
 
-    def append_line(self, data):
-        if len(data) < 1:
+    def append(self, data):
+        if len(data) == 0:
             # nothing arrived within the timeout
             return
 
@@ -42,7 +37,7 @@ class KumbhMelaInterpreter(threading.Thread):
             data = self.partial_line + data
             self.partial_line = None
 
-        if data[-1] != '\n':
+        if data[-1] != ord(b'\r'):
             # an incomplete line arrived before the timeout hit in
             self.partial_line = data
         else:
@@ -51,8 +46,7 @@ class KumbhMelaInterpreter(threading.Thread):
 #                #empty line somehow...
 #                print('empty line')
 #                continue
-        with self.serial_buffer_lock:
-            self.serial_buffer.append(data)
+        self.read_queue.put(data)
 
     def save_data(self):
         if self.current_data:
@@ -63,29 +57,19 @@ class KumbhMelaInterpreter(threading.Thread):
             self.current_data.save('data/%s_%s-%d.dat' % (self.port,
                                     time.strftime("%Y%m%d-%H%M%S"), self.file_cnt))
             self.file_cnt += 1
-            with self.serial_buffer_lock:
-                self.serial_buffer = self.serial_buffer[self.serial_buffer_read_index:]
-                print(len(self.serial_buffer))
-            self.serial_buffer_read_index = 0
             self.current_data = None
 
     def run(self):
         while not self.is_done or time.time() < self.read_till:
-            with self.serial_buffer_lock:
-                try:
-                    line = self.serial_buffer[self.serial_buffer_read_index]
-                except IndexError:
-                    # data not ready
-                    continue
-                self.serial_buffer_read_index += 1
-            if len(line) < 1:
+            line = self.read_queue.get()
+            if len(line) == 1:
                 continue
             if line[0] == '>':
                 self.save_data()
                 self.current_data = DataRead(line[1:])
             # maximum line address is 279620 with full 4MB data
             elif ((line[0] in ['0', '1', '2']) and
-                      (self.current_data is not None)):
+                  (self.current_data is not None)):
                 if len(line) != 29:
                     # print(len(line), line)
                     self.handle_error(10)
@@ -101,10 +85,6 @@ class KumbhMelaInterpreter(threading.Thread):
                 self.handle_error(12)
         print('read stopped')
         self.save_data()
-        if self.serial_buffer_read_index != 0:
-            print('serial read interrupted')
-            print('buffer len: {}, read index: {}'.format(
-                len(self.serial_buffer), self.serial_buffer_read_index))
 
     def handle_error(self, errcode=0):
         if self.current_data:
@@ -123,13 +103,15 @@ class DataRead(object):
         self.data = [[], []]
         self.system = self.data[0]
         self.detections = self.data[1]
-        self.OK = True
         self.errcode = -1
 
+    @property
+    def OK(self):
+        return self.errcode != -1
+
     def error(self, errcode=0):
-        self.OK = False
         self.errcode = errcode
-        
+
     def __str__(self):
         if self.OK:
             text = 'device_id: %s\nsystem:\n' % (self.id,)
@@ -159,11 +141,11 @@ class DataRead(object):
         else:
             self.error(1)
             return
-            
+
         if 0 < len(self.data[is_detection]) < line_id:
             self.error(2)
             return
-            
+
         try:
             ddata = base64.b64decode(data[1:]+'==')
         except TypeError:

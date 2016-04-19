@@ -8,7 +8,7 @@ Created on Mon Apr 04 14:55:32 2016
 import time
 import sys
 import os
-import base64
+from .kumbhm_simple import DataRead
 
 
 class KumbhMelaProcessor(object):
@@ -24,7 +24,7 @@ class KumbhMelaProcessor(object):
         self.save_dir = save_dir
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
-            
+
     def process_file(self, infile):
         start_cnt = self.file_cnt
         line = infile.readline()
@@ -36,9 +36,11 @@ class KumbhMelaProcessor(object):
             elif line[0] == '>':
                 self.save_data()
                 self.current_data = DataRead(line[1:])
-            elif (line[0] in ['0', '1', '2']) and (not self.current_data is None): #maximum line address is 279620 with full 4MB data
+            # maximum line address is 279620 with full 4MB data
+            elif ((line[0] in ['0', '1', '2']) and
+                  (self.current_data is not None)):
                 if len(line) != 29:
-                    #print(len(line), line)
+                    # print(len(line), line)
                     self.handle_error(10)
                 else:
                     try:
@@ -63,74 +65,13 @@ class KumbhMelaProcessor(object):
             self.current_data.save(self.save_dir+'%s-%d.dat' % (self.id, self.file_cnt))
             self.file_cnt += 1
             self.current_data = None
-            
+
     def handle_error(self, errcode=0):
         if self.current_data:
             self.current_data.error(errcode)
             self.save_data()
 
 
-class DataRead(object):
-    def __init__(self, device_id):
-        self.id = device_id
-        self.data=[[],[]]
-        self.system = self.data[0]
-        self.detections = self.data[1]
-        self.OK = True
-        self.errcode = -1
-        
-    def error(self, errcode=0):
-        self.OK = False
-        self.errcode = errcode
-        
-    def __str__(self):
-        if self.OK:
-            text = 'device_id: %s\nsystem:\n' % (self.id,)
-            for line in range(len(self.system)):
-                text += '%d:\t%s\n' % (line, self.system[line])
-            text += '\ndetections:\n'
-            for line in range(len(self.detections)):
-                text += '%d:\t%s\n' % (line, self.detections[line])
-            return text
-        return 'Corrupted reading!!\n\n'
-        
-    def save(self, fname):
-        f = open(fname+'s', 'wb')
-        for line in self.system:
-            f.write(line)
-        f.close()
-        f = open(fname+'d', 'wb')
-        for line in self.detections:
-            f.write(line)
-        f.close()
-            
-    def add_data(self, line_id, data):
-        if data[0] == ':':
-            is_detection = True
-        elif data[0] == '-':
-            is_detection = False
-        else:
-            self.error(1)
-            return
-            
-        if 0 < len(self.data[is_detection]) < line_id:
-            self.error(2)
-            return
-
-        try:
-            ddata = base64.b64decode(data[1:]+'==')
-        except TypeError:
-            self.error(3)
-            return
-
-        if sum(bytearray(ddata))%256 != 0:
-            self.error(4)
-
-        while line_id > len(self.data[is_detection])-1:
-            self.data[is_detection].append(chr(255)*15)
-
-        self.data[is_detection][line_id] = ddata[1:]
-        
 if __name__ == "__main__":
     fh = open(sys.argv[1], 'rb')
     proc = KumbhMelaProcessor()
