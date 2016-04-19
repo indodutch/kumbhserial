@@ -38,23 +38,23 @@ def main(argv=sys.argv[1:]):
         sys.exit(1)
 
     try:
-        dumpfile = dumper_main(chosen_port, tmp_dir=arguments['--tmp'])
+        dumper_main(chosen_port, tmp_dir=arguments['--tmp'])
     except serial.SerialException as e:
         print("Cannot start serial connection: {0}".format(e))
         sys.exit(1)
-
-    if dumpfile:
-        fid = os.path.splitext(os.path.basename(dumpfile))[0]
-        proc = KumbhMelaProcessor(fid)
-        with open(dumpfile, 'rb') as fh:
-            n_data = proc.process_file(fh)
-        print('%d frames processed' % (n_data,))
-        move_path = arguments['--output']
-        if not os.path.exists(move_path):
-            os.mkdir(move_path)
-        new_dumppath = os.path.join(move_path, os.path.basename(dumpfile))
-        os.rename(dumpfile, new_dumppath)
-        print('backup saved to ' + new_dumppath)
+    #
+    # if dumpfile:
+    #     fid = os.path.splitext(os.path.basename(dumpfile))[0]
+    #     proc = KumbhMelaProcessor(fid)
+    #     with open(dumpfile, 'rb') as fh:
+    #         n_data = proc.process_file(fh)
+    #     print('%d frames processed' % (n_data,))
+    #     move_path = arguments['--output']
+    #     if not os.path.exists(move_path):
+    #         os.mkdir(move_path)
+    #     new_dumppath = os.path.join(move_path, os.path.basename(dumpfile))
+    #     os.rename(dumpfile, new_dumppath)
+    #     print('backup saved to ' + new_dumppath)
 
 if __name__ == "__main__":
     main()
