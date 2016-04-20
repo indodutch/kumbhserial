@@ -1,8 +1,8 @@
 import base64
 import sys
-from .raw_dump import RawPrinter, Dumper
-import json
+from kumbhserial.raw_dump import JsonListAppender
 from .helpers import timestamp
+from .raw_dump import Dumper
 
 
 class TrackerInterpreter(object):
@@ -10,7 +10,7 @@ class TrackerInterpreter(object):
         self.appender = appender
         self.current_entries = None
 
-    def add_line(self, line):
+    def append(self, line):
         # if line[0] != '\n':
         # skipping lines not part of the well-defined stream
         # return
@@ -232,18 +232,11 @@ class TrackerEntrySet(object):
             return 'Corrupted reading: error {0}\n\n'.format(self.error)
 
 
-class TrackerEntrySetJsonConverter(object):
+class TrackerEntrySetAppender(object):
     def __init__(self, appender):
         self.appender = appender
-        self.first = True
-        self.appender.append(b'[')
 
     def append(self, entry_set):
-        if self.first:
-            self.first = False
-        else:
-            self.appender.append(b',')
-
         entry_dict = {
             'id': entry_set.device_id,
             'time': entry_set.time,
@@ -254,10 +247,9 @@ class TrackerEntrySetJsonConverter(object):
         if entry_set.error is not None:
             entry_dict['error'] = entry_set.error
 
-        self.appender.append(bytes(json.dumps(entry_dict), encoding='ascii'))
+        self.appender.append(entry_dict)
 
     def done(self):
-        self.appender.append(b']')
         self.appender.done()
 
 
@@ -265,52 +257,35 @@ class SeparatedTrackerEntrySetJsonConverter(object):
     def __init__(self, appender_detections, appender_system):
         self.appender_detections = appender_detections
         self.appender_system = appender_system
-        self.first_detection = True
-        self.first_system = True
-        self.appender_detections.append(b'[')
-        self.appender_system.append(b'[')
 
     def append(self, entry_set):
         base = {'deviceId': entry_set.device_id,
                 'time': entry_set.time,
                 'endTime': entry_set.end_time}
         for d in entry_set.detections:
-            if self.first_detection:
-                self.first_detection = False
-            else:
-                self.appender_detections.append(b',')
             a = base.copy()
             a.update(d)
-
-            self.appender_detections.append(
-                bytes(json.dumps(a), encoding='ascii'))
+            self.appender_detections.append(a)
 
         for s in entry_set.system:
-            if self.first_system:
-                self.first_system = False
-            else:
-                self.appender_system.append(b',')
             a = base.copy()
             a.update(s)
-
-            self.appender_system.append(
-                bytes(json.dumps(a), encoding='ascii'))
+            self.appender_system.append(a)
 
     def done(self):
-        self.appender_system.append(b']')
         self.appender_system.done()
-        self.appender_detections.append(b']')
         self.appender_detections.done()
 
 
 if __name__ == '__main__':
     parser = TrackerInterpreter(
-        SeparatedTrackerEntrySetJsonConverter(Dumper(sys.argv[2]),
-                                              Dumper(sys.argv[3])))
+        SeparatedTrackerEntrySetJsonConverter(
+            JsonListAppender(Dumper(sys.argv[2])),
+            JsonListAppender(Dumper(sys.argv[3]))))
     with open(sys.argv[1], 'rb') as f:
         data = f.read().split(b'\r')
 
     for l in data:
-        parser.add_line(l + b'\r')
+        parser.append(l + b'\r')
 
     parser.done()

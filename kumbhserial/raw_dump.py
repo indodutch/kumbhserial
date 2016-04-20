@@ -4,6 +4,7 @@ Created on Mon Apr 04 14:55:32 2016
 
 @author: Zoli
 """
+import json
 
 from .reader import run_reader
 import serial
@@ -32,6 +33,25 @@ class RawPrinter(object):
 
     def done(self):
         pass
+
+
+class JsonListAppender(object):
+    def __init__(self, appender):
+        self.appender = appender
+        self.first = True
+        self.appender.append(b'[')
+
+    def append(self, data):
+        if self.first:
+            self.first = False
+        else:
+            self.appender.append(b',')
+
+        self.appender.append(bytes(json.dumps(data), encoding='ascii'))
+
+    def done(self):
+        self.appender.append(b']')
+        self.appender.done()
 
 
 def create_dumper_file(port, tmp_dir='data'):
