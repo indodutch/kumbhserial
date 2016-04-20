@@ -8,7 +8,7 @@ class SerialReader(threading.Thread):
 
     WAIT_FOR_DEVICE_TIMEOUT = 12
 
-    def __init__(self, port, appender):
+    def __init__(self, port, appender, terminator=b'\r', insert_timestamp_at=(b'>', b'<')):
         super(SerialReader, self).__init__()
         self.comm = serial.Serial(port, 921600, timeout=1)
         self.port = port
@@ -17,6 +17,8 @@ class SerialReader(threading.Thread):
         self.receive_until = time.time()
         self.heartbeat = Heartbeat(self.comm)
         self.exception = None
+        self.terminator = terminator
+        self.insert_timestamp_at = insert_timestamp_at
 
     def start(self):
         super(SerialReader, self).start()
@@ -26,9 +28,9 @@ class SerialReader(threading.Thread):
         print('started logger')
         try:
             while not self.is_done or time.time() < self.receive_until:
-                data = self.comm.read_until(terminator=b'\r')
-                data = insert_timestamp(data, data.find(b'>'))
-                data = insert_timestamp(data, data.find(b'<'))
+                data = self.comm.read_until(terminator=self.terminator)
+                for token in self.insert_timestamp_at:
+                    data = insert_timestamp(data, token)
                 self.appender.append(data)
             print('read stopped')
         except Exception as ex:

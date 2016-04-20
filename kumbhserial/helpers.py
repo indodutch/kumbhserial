@@ -1,5 +1,5 @@
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def text_in(quit_commands=('q', 'quit')):
@@ -28,10 +28,15 @@ def select_value_from_list(text, value_list):
         return value_list[int(text)]
 
 
-def insert_timestamp(text, index, separator=b'%'):
+def timestamp():
+    return datetime.now(timezone.utc).astimezone().isoformat()
+
+
+def insert_timestamp(text, token, separator=b'%'):
+    index = text.find(token)
     if index != -1:
-        return (text[:index + 1] + separator +
-                bytes(datetime.now().isoformat(), encoding='ascii') +
-                separator + text[index + 1:])
+        return (text[:index + len(token)] + separator +
+                bytes(timestamp(), encoding='ascii') +
+                separator + text[index + len(token):])
     else:
         return text

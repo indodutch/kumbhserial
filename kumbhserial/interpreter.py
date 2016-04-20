@@ -1,14 +1,13 @@
 import base64
 import sys
 from .raw_dump import RawPrinter, Dumper
-from datetime import datetime
 import json
+from .helpers import timestamp
 
 
 class TrackerInterpreter(object):
     def __init__(self, appender):
         self.appender = appender
-        self.errcode = -1
         self.current_entries = None
 
     def add_line(self, line):
@@ -30,7 +29,7 @@ class TrackerInterpreter(object):
                 time = parts[1]
                 device_id = parts[2]
             else:
-                time = datetime.now().isoformat()
+                time = timestamp()
                 device_id = line[1:]
 
             self.current_entries = TrackerEntrySet(int(device_id), time)
@@ -65,7 +64,7 @@ class TrackerInterpreter(object):
                 self.current_entries.end_time = parts[1]
                 device_id = parts[2]
             else:
-                self.current_entries.end_time = datetime.now().isoformat()
+                self.current_entries.end_time = timestamp()
                 device_id = line[1:]
 
             if int(device_id) == self.current_entries.device_id:
