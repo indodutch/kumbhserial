@@ -19,14 +19,14 @@ class TrackerInterpreter(object):
 
         if len(line) == 0:
             return
-        if line[0] == ord(b'>'):
+        if line.startswith(b'>'):
             if self.current_entries is not None:
                 self.log(
                     error='Starting new device log when the old one was not '
                           'finished')
             parts = line.split(b'%')
             if len(parts) == 3:
-                time = parts[1]
+                time = str(parts[1], encoding='ascii')
                 device_id = parts[2]
             else:
                 time = timestamp()
@@ -39,29 +39,27 @@ class TrackerInterpreter(object):
             return
 
         # maximum line address is 279620 with full 4MB data
-        if line[0] in (ord(b'0'), ord(b'1'), ord(b'2')):
+        if (line.startswith(b'0') or line.startswith(b'1') or
+                line.startswith(b'2')):
             if len(line) != 29:
-                self.log(error='Device log line not length 29: ' + line)
+                self.log(error=b'Device log line not length 29: ' + line)
                 return
             else:
                 try:
                     line_id = int(line[:6])
-                    if line[7] == ord(b'/'):
-                        # end of log
-                        pass
-                    elif line[6] == ord(b':'):
+                    if line[6:].startswith(b':'):
                         self.current_entries.add_detection(line_id, line[7:])
-                    elif line[6] == ord(b'-'):
+                    elif line[6:].startswith(b'-'):
                         self.current_entries.add_status(line_id, line[7:])
                     else:
                         self.log(
-                            error='Invalid device log line format: ' + line)
+                            error=b'Invalid device log line format: ' + line)
                 except ValueError:
-                    self.log(error='Invalid device log line format: ' + line)
-        elif line[0] == ord(b'<'):
+                    self.log(error=b'Invalid device log line format: ' + line)
+        elif line.startswith(b'<'):
             parts = line.split(b'%')
             if len(parts) == 3:
-                self.current_entries.end_time = parts[1]
+                self.current_entries.end_time = str(parts[1], encoding='ascii')
                 device_id = parts[2]
             else:
                 self.current_entries.end_time = timestamp()
@@ -71,11 +69,11 @@ class TrackerInterpreter(object):
                 self.log()
             else:
                 self.log(
-                    error='Started with device ID {0} and ended with device '
-                          'ID {1}'.format(self.current_entries.device_id,
-                                          line[1:]))
+                    error=b'Started with device ID {0} and ended with device '
+                    b'ID {1}'.format(self.current_entries.device_id,
+                                     line[1:]))
         else:
-            self.log(error='Unknown line type: ' + line)
+            self.log(error=b'Unknown line type: ' + line)
 
     def log(self, error=None):
         if self.current_entries is not None:
@@ -114,7 +112,7 @@ class TrackerEntrySet(object):
 
     def add_status(self, line_id, b64data):
         # last line
-        if b64data == [ord(b'/')] * 22:
+        if b64data == b'/' * 22:
             return
         try:
             hex_data = self.decode(b64data)
