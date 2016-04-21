@@ -1,6 +1,6 @@
 import sys
 from .helpers import timestamp
-from .raw_dump import JsonListAppender, Dumper
+from .appenders import JsonListAppender, Dumper
 
 
 class SnifferInterpreter(object):
@@ -9,6 +9,9 @@ class SnifferInterpreter(object):
         self.line_number = 0
 
     def append(self, line):
+        line = line.strip()
+        if len(line) == 0:
+            return
         if b',' in line:
             elements = [part.strip() for part in line.split(b',')]
             sniffed = {
@@ -21,7 +24,7 @@ class SnifferInterpreter(object):
             }
         else:
             sniffed = {
-                'rtc': int(line.strip()),
+                'rtc': int(line),
             }
         sniffed['timestamp'] = timestamp()
         sniffed['line'] = self.line_number

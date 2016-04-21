@@ -32,14 +32,15 @@ setup(name='kumbhserial',
       tests_require=['nose', 'pyflakes', 'pep8'],
       entry_points={
         'console_scripts': [
-            'kumbhserial = kumbhserial.main:main',
-            'kumbhsimple = kumbhserial.kumbhm_simple:main'
+            'kumbhdownload = kumbhserial.main:download',
+            'kumbhsniffer = kumbhserial.main:sniffer'
         ]
       },
       classifiers=[
         'Environment :: Console',
         'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
       ],
       )

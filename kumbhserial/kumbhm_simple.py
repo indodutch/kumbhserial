@@ -12,7 +12,7 @@ import threading
 import base64
 from queue import Queue
 from .ports import choose_serial_port
-from .raw_dump import run_reader
+from .appenders import run_reader
 
 
 class KumbhMelaInterpreter(threading.Thread):

@@ -1,8 +1,8 @@
 import base64
 import sys
-from kumbhserial.raw_dump import JsonListAppender
+from kumbhserial.appenders import JsonListAppender
 from .helpers import timestamp
-from .raw_dump import Dumper
+from .appenders import Dumper
 
 
 class TrackerInterpreter(object):

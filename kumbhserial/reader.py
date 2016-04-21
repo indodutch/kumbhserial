@@ -8,21 +8,26 @@ class SerialReader(threading.Thread):
 
     WAIT_FOR_DEVICE_TIMEOUT = 12
 
-    def __init__(self, port, appender, terminator=b'\r', insert_timestamp_at=(b'>', b'<')):
+    def __init__(self, port, appender, heartbeat=True, terminator=b'\r',
+                 insert_timestamp_at=(b'>', b'<')):
         super(SerialReader, self).__init__()
         self.comm = serial.Serial(port, 921600, timeout=1)
         self.port = port
         self.is_done = False
         self.appender = appender
         self.receive_until = time.time()
-        self.heartbeat = Heartbeat(self.comm)
+        if heartbeat:
+            self.heartbeat = Heartbeat(self.comm)
+        else:
+            self.heartbeat = None
         self.exception = None
         self.terminator = terminator
         self.insert_timestamp_at = insert_timestamp_at
 
     def start(self):
         super(SerialReader, self).start()
-        self.heartbeat.start()
+        if self.heartbeat:
+            self.heartbeat.start()
 
     def run(self):
         print('started logger')
@@ -45,10 +50,11 @@ class SerialReader(threading.Thread):
 
     def done(self):
         if not self.is_done:
-            self.is_done = False
+            self.is_done = True
             self.receive_until = (time.time() +
                                   SerialReader.WAIT_FOR_DEVICE_TIMEOUT)
-            self.heartbeat.done()
+            if self.heartbeat:
+                self.heartbeat.done()
 
 
 class Heartbeat(threading.Thread):
@@ -74,15 +80,15 @@ class Heartbeat(threading.Thread):
         self.is_done = True
 
 
-def run_reader(port, appender):
+def run_reader(port, appender, **kwargs):
     print('Reading ' + port + '. Type q or quit to quit.')
-    reader = SerialReader(port, appender)
+    reader = SerialReader(port, appender, **kwargs)
     print('Starting {0}...'.format(port))
     reader.start()
     try:
         while reader.exception is None:
             text_in()  # waiting for user input
-    except ValueError:
+    except (ValueError, KeyboardInterrupt):
         print('Stopping {0}...'.format(reader.port))
     finally:
         reader.done()
