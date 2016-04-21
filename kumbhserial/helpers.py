@@ -1,5 +1,14 @@
 import sys
 from datetime import datetime, timezone
+import os
+import time
+
+
+def output_filename(directory, prefix, extension):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    return os.path.join(directory, '{0}-{1}.{2}'.format(
+        prefix, time.strftime("%Y%m%d-%H%M%S"), extension))
 
 
 def text_in(quit_commands=('q', 'quit')):

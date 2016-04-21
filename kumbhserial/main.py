@@ -6,15 +6,22 @@ Created on Fri Apr 08 12:13:28 2016
 """
 from __future__ import print_function
 
-import os
-from .raw_dump import dumper_main
-from .kumbhm_processor import KumbhMelaProcessor
+from kumbhserial.helpers import output_filename
+from kumbhserial.reader import run_reader
+from kumbhserial.sniffer import SnifferInterpreter
+from .raw_dump import dumper_main, Dumper, JsonListAppender
 from .ports import resolve_serial_port
 from .version import __version__
 import sys
 import docopt
 import serial
 
+def resolve_port(port):
+    try:
+        return resolve_serial_port(port)
+    except ValueError as ex:
+        print(ex, file=sys.stderr)
+        sys.exit(1)
 
 def main(argv=sys.argv[1:]):
     """
@@ -31,12 +38,7 @@ def main(argv=sys.argv[1:]):
     """
     arguments = docopt.docopt(main.__doc__, argv, version=__version__)
 
-    try:
-        chosen_port = resolve_serial_port(arguments['<device_num>'])
-    except ValueError as ex:
-        print(ex, file=sys.stderr)
-        sys.exit(1)
-
+    chosen_port = resolve_port(arguments['<device_num>'])
     try:
         dumper_main(chosen_port, tmp_dir=arguments['--tmp'])
     except serial.SerialException as e:
@@ -55,6 +57,32 @@ def main(argv=sys.argv[1:]):
     #     new_dumppath = os.path.join(move_path, os.path.basename(dumpfile))
     #     os.rename(dumpfile, new_dumppath)
     #     print('backup saved to ' + new_dumppath)
+
+
+def sniffer(argv=sys.argv[1:]):
+    """
+    Listens to a device and dumps it
+    Usage:
+      kumbhsniffer [-h] [-V] [--output dir] [<device_num>]
+
+    Options:
+      <device_num>       TTY or serial port number or name to listen to
+      -h, --help         This help text
+      -o, --output dir   Output directory [default: data/sniffer]
+      -V, --version      Version information
+    """
+    arguments = docopt.docopt(main.__doc__, argv, version=__version__)
+
+    chosen_port = resolve_port(arguments['<device_num>'])
+
+    filename = output_filename(arguments['--output'], 'sniffer', 'json')
+    interpreter = SnifferInterpreter(JsonListAppender(Dumper(filename)))
+    try:
+        run_reader(chosen_port, interpreter)
+    except serial.SerialException as e:
+        print("Cannot start serial connection: {0}".format(e))
+        sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

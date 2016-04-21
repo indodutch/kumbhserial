@@ -1,7 +1,4 @@
-import re
-
 import sys
-
 from .helpers import timestamp
 from .raw_dump import JsonListAppender, Dumper
 
@@ -9,13 +6,11 @@ from .raw_dump import JsonListAppender, Dumper
 class SnifferInterpreter(object):
     def __init__(self, appender):
         self.appender = appender
-        self.comma_splitter = re.compile(b',\s*')
         self.line_number = 0
 
     def append(self, line):
-        line = line.strip()
         if b',' in line:
-            elements = self.comma_splitter.split(line)
+            elements = [part.strip() for part in line.split(b',')]
             sniffed = {
                 'rtc': int(elements[0]),
                 'time': int(elements[1]),
@@ -26,7 +21,7 @@ class SnifferInterpreter(object):
             }
         else:
             sniffed = {
-                'rtc': int(line),
+                'rtc': int(line.strip()),
             }
         sniffed['timestamp'] = timestamp()
         sniffed['line'] = self.line_number
@@ -36,6 +31,7 @@ class SnifferInterpreter(object):
 
     def done(self):
         self.appender.done()
+
 
 if __name__ == '__main__':
     parser = SnifferInterpreter(JsonListAppender(Dumper(sys.argv[2])))

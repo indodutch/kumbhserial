@@ -6,11 +6,10 @@ Created on Mon Apr 04 14:55:32 2016
 """
 import json
 
+from kumbhserial.helpers import output_filename
 from .reader import run_reader
 import serial
-import time
 import sys
-import os
 from .ports import choose_serial_port
 
 
@@ -56,10 +55,7 @@ class JsonListAppender(object):
 
 def create_dumper_file(port, tmp_dir='data'):
     port_id = port.split('/')[-1]
-    if not os.path.exists(tmp_dir):
-        os.makedirs(tmp_dir)
-    return os.path.join(tmp_dir, 'dump-{0}{1}.txt'.format(
-        port_id, time.strftime("%Y%m%d-%H%M%S")))
+    return output_filename(tmp_dir, 'dump-' + port_id, 'txt')
 
 
 def dumper_main(chosen_port=None, tmp_dir='data'):
