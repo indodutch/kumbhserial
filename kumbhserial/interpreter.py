@@ -1,6 +1,7 @@
 import base64
 import sys
 from kumbhserial.appenders import JsonListAppender
+from kumbhserial.reader import read_file
 from .helpers import timestamp
 from .appenders import Dumper
 
@@ -282,10 +283,4 @@ if __name__ == '__main__':
         SeparatedTrackerEntrySetJsonConverter(
             JsonListAppender(Dumper(sys.argv[2])),
             JsonListAppender(Dumper(sys.argv[3]))))
-    with open(sys.argv[1], 'rb') as f:
-        data = f.read().split(b'\r')
-
-    for l in data:
-        parser.append(l + b'\r')
-
-    parser.done()
+    read_file(sys.argv[1], parser)

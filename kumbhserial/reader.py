@@ -80,6 +80,15 @@ class Heartbeat(threading.Thread):
         self.is_done = True
 
 
+def read_file(filename, appender, terminator=b'\r'):
+    with open(filename, 'rb') as f:
+        data = f.read().split(terminator)
+
+    for l in data:
+        appender.append(l + terminator)
+    appender.done()
+
+
 def run_reader(port, appender, **kwargs):
     print('Reading ' + port + '. Type q or quit to quit.')
     reader = SerialReader(port, appender, **kwargs)

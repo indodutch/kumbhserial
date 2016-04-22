@@ -1,4 +1,6 @@
 import sys
+
+from kumbhserial.reader import read_file
 from .helpers import timestamp
 from .appenders import JsonListAppender, Dumper
 
@@ -38,7 +40,4 @@ class SnifferInterpreter(object):
 
 if __name__ == '__main__':
     parser = SnifferInterpreter(JsonListAppender(Dumper(sys.argv[2])))
-    with open(sys.argv[1], 'rb') as f:
-        for line in f.readlines():
-            parser.append(line)
-    parser.done()
+    read_file(sys.argv[1], parser)
