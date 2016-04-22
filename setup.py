@@ -16,9 +16,9 @@
 """Kumbh Mela serial device reader"""
 
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages
 except ImportError:
-    from distutils.core import setup
+    from distutils.core import setup, find_packages
 
 exec(open('kumbhserial/version.py').read())
 
@@ -27,13 +27,14 @@ setup(name='kumbhserial',
       description=__doc__,
       author='Zoltan Beck',
       author_email='zb1f12@soton.ac.uk',
-      packages=['kumbhserial'],
+      packages=find_packages(),
       install_requires=['pyserial', 'docopt'],
       tests_require=['nose', 'pyflakes', 'pep8'],
-      entry_points={
+      entry_points = {
         'console_scripts': [
-            'kumbhdownload = kumbhserial.main:download',
-            'kumbhsniffer = kumbhserial.main:sniffer'
+            'kumbhdownload  = kumbhserial.main:download',
+            'kumbhsniffer   = kumbhserial.main:sniffer',
+            'kumbhprocessor = kumbhserial.main:processor'
         ]
       },
       classifiers=[

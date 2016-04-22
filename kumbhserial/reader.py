@@ -98,7 +98,8 @@ def run_reader(port, appender, **kwargs):
         while reader.exception is None:
             text_in()  # waiting for user input
     except (ValueError, KeyboardInterrupt):
-        print('Stopping {0}...'.format(reader.port))
+        print('Stopping {0}... WAIT {1} SECONDS!'
+              .format(reader.port, SerialReader.WAIT_FOR_DEVICE_TIMEOUT))
     finally:
         reader.done()
         reader.join(SerialReader.WAIT_FOR_DEVICE_TIMEOUT + 1)
