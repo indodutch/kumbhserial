@@ -10,7 +10,7 @@ class SerialReader(threading.Thread):
 
     def __init__(self, port, appender, heartbeat=True, terminator=b'\r',
                  insert_timestamp_at=(b'>', b'<')):
-        super(SerialReader, self).__init__()
+        super().__init__()
         self.comm = serial.Serial(port, 921600, timeout=1)
         self.port = port
         self.is_done = False
@@ -25,7 +25,7 @@ class SerialReader(threading.Thread):
         self.insert_timestamp_at = insert_timestamp_at
 
     def start(self):
-        super(SerialReader, self).start()
+        super().start()
         if self.heartbeat:
             self.heartbeat.start()
 
@@ -44,7 +44,7 @@ class SerialReader(threading.Thread):
 
     def join(self, timeout=None):
         try:
-            super(SerialReader, self).join(timeout=timeout)
+            super().join(timeout=timeout)
         finally:
             self.appender.done()
 
@@ -59,7 +59,7 @@ class SerialReader(threading.Thread):
 
 class Heartbeat(threading.Thread):
     def __init__(self, comm, sleep=1):
-        super(Heartbeat, self).__init__()
+        super().__init__()
         self.comm = comm
         self.sleep = sleep
         self.is_done = False
