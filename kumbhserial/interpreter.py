@@ -197,9 +197,9 @@ class TrackerEntrySet(object):
         # etc...
         for i in range(0, 30, 5):
             # The last line of a detection log has the last (one or more)
-            # 16bit samples set with all bits ‘1’, in base 64 representation
-            #  the last two characters are ‘//’ as a result and the
-            # character preceding it must be ‘f’,’v’ or ‘/’.
+            # 16bit samples set with all bits 1, in base 64 representation
+            #  the last two characters are // as a result and the
+            # character preceding it must be f, v or /.
             if (oct_data[i] &
                     oct_data[i + 1] &
                     oct_data[i + 2] &
@@ -240,13 +240,21 @@ class TrackerEntrySet(object):
             text = 'device_id: {0} at time {1}\nsystem:\n'.format(
                 self.device_id, self.time)
             for line in self.system:
-                text += '{0}\n'.format(line)
+                text += '{0}\n'.format([(key, line[key])
+                                        for key in sorted(line.keys())])
             text += '\ndetections:\n'
             for line in self.detections:
-                text += '{0}\n'.format(line)
+                text += '{0}\n'.format([(key, line[key])
+                                        for key in sorted(line.keys())])
             return text
         else:
             return 'Corrupted reading: error {0}\n\n'.format(self.error)
+
+    def __eq__(self, other):
+        return repr(self) == repr(other)
+
+    def __hash__(self):
+        return hash((self.device_id, self.time))
 
 
 class TrackerEntrySetAppender(object):
