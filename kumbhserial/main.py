@@ -17,6 +17,7 @@ from .ports import resolve_serial_port, choose_serial_port
 from .version import __version__
 import sys
 import os
+import shutil
 import docopt
 import serial
 
@@ -114,13 +115,17 @@ def processor(argv=sys.argv[1:]):
     processed_dir = os.path.join(arguments['--data'], 'raw',
                                  'processed')
 
-    if len(files) > 0:
-        if not os.path.exists(processed_dir):
-            os.mkdir(processed_dir)
+    if len(files) == 0:
+        print("No files to be processed")
+        return
+
+    if not os.path.exists(processed_dir):
+        os.mkdir(processed_dir)
 
     for i, path in enumerate(files):
-        print("Converting {0} out of {1}".format(i + 1, len(files)))
         filename = os.path.basename(path)
+        print("Converting {0} out of {1}: {2}"
+              .format(i + 1, len(files), filename))
         base = os.path.splitext(filename)[0]
         filename_detections = output_filename(
             os.path.join(arguments['--data'], 'detection'),
@@ -135,9 +140,11 @@ def processor(argv=sys.argv[1:]):
 
         read_file(path, tracker)
 
-        os.path.move(path, processed_dir)
-
-    print("Done.")
+        try:
+            shutil.move(path, processed_dir)
+        except OSError as ex:
+            print("Failed to move {0} to {1}: {2}"
+                  .format(path, processed_dir, ex))
 
 
 def resolve_port(port):
@@ -170,4 +177,4 @@ def read_device(port, appender, **kwargs):
 def dir_files(dir_name):
     return [os.path.join(dir_name, f)
             for f in os.listdir(dir_name)
-            if os.path.isfile(f)]
+            if os.path.isfile(os.path.join(dir_name, f))]
