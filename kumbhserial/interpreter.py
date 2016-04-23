@@ -279,6 +279,9 @@ class SeparatedTrackerEntrySetJsonConverter(object):
         base = {'deviceId': entry_set.device_id,
                 'time': entry_set.time,
                 'endTime': entry_set.end_time}
+        if entry_set.error:
+            base['error'] = entry_set.error
+
         for d in entry_set.detections:
             a = base.copy()
             a.update(d)
