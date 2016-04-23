@@ -58,8 +58,8 @@ def download(argv=sys.argv[1:]):
             'system-' + port_id, 'json')
         tracker = TrackerInterpreter(
             SeparatedTrackerEntrySetJsonConverter(
-                JsonListAppender(Dumper(filename_detections)),
-                JsonListAppender(Dumper(filename_system))))
+                JsonListAppender(Dumper(filename_detections, flush=False)),
+                JsonListAppender(Dumper(filename_system, flush=False))))
         appender = Duplicator([ThreadBuffer(tracker), dumper])
 
     read_device(chosen_port, appender)
@@ -135,8 +135,8 @@ def processor(argv=sys.argv[1:]):
             'system-' + base, 'json')
         tracker = TrackerInterpreter(
             SeparatedTrackerEntrySetJsonConverter(
-                JsonListAppender(Dumper(filename_detections)),
-                JsonListAppender(Dumper(filename_system))))
+                JsonListAppender(Dumper(filename_detections, flush=False)),
+                JsonListAppender(Dumper(filename_system, flush=False))))
 
         read_file(path, tracker)
 

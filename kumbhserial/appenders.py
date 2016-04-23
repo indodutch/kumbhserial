@@ -6,13 +6,15 @@ from .helpers import output_filename
 
 
 class Dumper(object):
-    def __init__(self, path):
+    def __init__(self, path, flush=True):
         self.file = open(path, 'wb')
+        self.flush = flush
 
     def append(self, data):
         if len(data) > 0 and self.file:
             self.file.write(data)
-            self.file.flush()
+            if self.flush:
+                self.file.flush()
 
     def done(self):
         self.file.close()
