@@ -12,13 +12,10 @@ def output_filename(directory, prefix, extension):
 
 
 def text_in(quit_commands=('q', 'quit')):
-    try:
-        text = sys.stdin.readline().strip().lower()
-        if text in quit_commands:
-            raise ValueError('Quit')
-        return text
-    except KeyboardInterrupt:
+    text = sys.stdin.readline().strip().lower()
+    if text in quit_commands:
         raise ValueError('Quit')
+    return text
 
 
 def select_value_from_list(text, value_list):

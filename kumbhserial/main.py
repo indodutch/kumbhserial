@@ -151,15 +151,16 @@ def resolve_port(port):
     try:
         chosen_port = resolve_serial_port(port)
     except ValueError as ex:
-        print(ex, file=sys.stderr)
-        sys.exit(1)
+        sys.exit(ex)
 
     try:
         if chosen_port is None:
             chosen_port = choose_serial_port()
-    except (ValueError, KeyboardInterrupt) as ex:
+    except ValueError as ex:
         print(ex)
-        sys.exit(0)
+        sys.exit()
+    except KeyboardInterrupt as ex:
+        sys.exit(ex)
 
     return chosen_port
 
@@ -168,10 +169,12 @@ def read_device(port, appender, **kwargs):
     try:
         run_reader(port, appender, **kwargs)
     except serial.SerialException as e:
-        print("Cannot start serial connection: {0}".format(e))
-        sys.exit(1)
-    except (ValueError, KeyboardInterrupt):
-        print("Quit.")
+        sys.exit("Cannot start serial connection: {0}".format(e))
+    except ValueError:
+        print("Quit")
+        sys.exit()
+    except KeyboardInterrupt:
+        sys.exit("Force quit")
 
 
 def dir_files(dir_name):
