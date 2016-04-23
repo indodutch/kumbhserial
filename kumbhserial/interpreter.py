@@ -89,6 +89,8 @@ class TrackerInterpreter(object):
 
 
 class TrackerEntrySet(object):
+    separator = b'/' * 21
+
     def __init__(self, device_id, time):
         self.device_id = device_id
         self.time = time
@@ -108,6 +110,10 @@ class TrackerEntrySet(object):
         self._error = error
 
     def decode(self, b64data):
+        # last line
+        if b64data.startswith(TrackerEntrySet.separator):
+            raise ValueError('separator')
+
         try:
             binary_data = bytearray(base64.b64decode(b64data + b'=='))
         except TypeError:
@@ -122,13 +128,9 @@ class TrackerEntrySet(object):
             return binary_data
 
     def add_status(self, line_id, b64data):
-        # last line
-        if b64data == b'/' * 22:
-            return
         try:
             hex_data = self.decode(b64data)
         except ValueError:
-            # experiment data string
             return
         self.system.append({
             'line': line_id,
@@ -173,11 +175,14 @@ class TrackerEntrySet(object):
 
     def add_detection(self, line_id, b64data):
         # detect.lrc = 0x12
-        hex_data = self.decode(b64data)[1:]
+        try:
+            hex_data = self.decode(b64data)[1:]
+        except ValueError:
+            return
         oct_data = []
-        for hex in hex_data:
-            oct_data.append((hex & 0xf0) >> 4)
-            oct_data.append(hex & 0x0f)
+        for h in hex_data:
+            oct_data.append((h & 0xf0) >> 4)
+            oct_data.append(h & 0x0f)
 
         # 12000000 00000000 00000000 00000000
         #
