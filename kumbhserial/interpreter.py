@@ -93,9 +93,19 @@ class TrackerEntrySet(object):
         self.device_id = device_id
         self.time = time
         self.end_time = None
-        self.error = None
+        self._error = None
         self.system = []
         self.detections = []
+
+    @property
+    def error(self):
+        return self._error
+
+    @error.setter
+    def error(self, error):
+        print('ERROR: reading device {0} failed: {1}'
+              .format(self.device_id, error))
+        self._error = error
 
     def decode(self, b64data):
         try:
