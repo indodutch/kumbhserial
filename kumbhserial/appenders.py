@@ -52,7 +52,8 @@ class JsonListAppender(object):
         else:
             self.appender.append(b',')
 
-        self.appender.append(bytes(json.dumps(data), encoding='ascii'))
+        self.appender.append(bytes(json.dumps(data, separators=(',', ':')),
+                                   encoding='ascii'))
 
     def done(self):
         self.appender.append(b']')
