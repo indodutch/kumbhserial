@@ -81,12 +81,22 @@ class Heartbeat(threading.Thread):
 
 
 def read_file(filename, appender, terminator=b'\r'):
+    buffer = b''
+    buffer_size = 1024
     with open(filename, 'rb') as f:
-        data = f.read().split(terminator)
+        terminator_idx = 0
+        while terminator_idx != -1:
+            new_buffer = b'i'
+            while terminator not in new_buffer and len(new_buffer) > 0:
+                new_buffer = f.read(buffer_size)
+                buffer += new_buffer
 
-    for l in data:
-        appender.append(l + terminator)
-    appender.done()
+            terminator_idx = buffer.find(terminator)
+            appender.append(buffer[:terminator_idx + len(terminator)])
+            buffer = buffer[terminator_idx + len(terminator):]
+
+        appender.append(buffer)
+        appender.done()
 
 
 def run_reader(port, appender, **kwargs):
