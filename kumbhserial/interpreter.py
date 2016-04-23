@@ -204,7 +204,8 @@ class TrackerEntrySet(object):
                 #
                 # rssi = 82 (20 + 0x3E)
                 # 3E000
-                'rssi': 20 + (((oct_data[i] << 4) + oct_data[i + 1]) & 0x3f),
+                'rssi': -(20 + (((oct_data[i] << 4) +
+                                 oct_data[i + 1]) & 0x3f)),
                 # id = 0xABC
                 # 00ABC
                 'id': ((oct_data[i + 2] << 8) +
