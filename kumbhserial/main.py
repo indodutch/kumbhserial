@@ -107,8 +107,11 @@ def processor(argv=sys.argv[1:]):
     if arguments['<input>']:
         if os.path.isdir(arguments['<input>']):
             files = dir_files(arguments['<input>'])
-        else:
+        elif os.path.exists(arguments['<input>']):
             files = [arguments['<input>']]
+        else:
+            sys.exit('Input path {0} does not exist.'
+                     .format(arguments['<input>']))
     else:
         files = dir_files(os.path.join(arguments['--data'], 'raw'))
 
