@@ -95,7 +95,7 @@ def sniffer(argv=sys.argv[1:]):
     filename = output_filename(os.path.join(arguments['--data'], 'sniffer'),
                                'sniffer', 'json')
     interpreter = SnifferInterpreter(JsonListAppender(Dumper(filename)))
-    read_device(chosen_port, interpreter, heartbeat=False)
+    read_device(chosen_port, interpreter, heartbeat=None)
 
 
 def processor(argv=sys.argv[1:]):

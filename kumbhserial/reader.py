@@ -23,28 +23,44 @@ from .helpers import text_in, insert_timestamp
 
 class SerialReader(threading.Thread):
 
+    """
+    Reads a serial device, as provided in the Kumbh Mela project.
+    """
+
     WAIT_FOR_DEVICE_TIMEOUT = 12
 
-    def __init__(self, port, appender, heartbeat=True, terminator=b'\r',
-                 insert_timestamp_at=(b'>', b'<')):
+    def __init__(self, port, appender, writer=None, terminator=b'\r',
+                 insert_timestamp_at=(b'>', b'<'), baud_rate=921600):
+        """
+        Starts a serial port reader.
+        :param port: serial port name
+        :param appender: appender to write lines to
+        :param writer: threading.Thread that takes a serial port as initial
+            parameter. If it is None, no data will be written.
+        :param terminator: end-of-line terminator. It will not read beyond this
+            terminator. Pass None to read
+        :param insert_timestamp_at:
+        :param baud_rate:
+        :return:
+        """
         super().__init__()
-        self.comm = serial.Serial(port, 921600, timeout=1)
+        self.comm = serial.Serial(port, baud_rate, timeout=1)
         self.port = port
         self.is_done = False
         self.appender = appender
         self.receive_until = time.time()
-        if heartbeat:
-            self.heartbeat = Heartbeat(self.comm)
+        if writer is not None:
+            self.writer = writer(self.comm)
         else:
-            self.heartbeat = None
+            self.writer = None
         self.exception = None
         self.terminator = terminator
         self.insert_timestamp_at = insert_timestamp_at
 
     def start(self):
         super().start()
-        if self.heartbeat:
-            self.heartbeat.start()
+        if self.writer:
+            self.writer.start()
 
     def run(self):
         print('started logger')
@@ -70,8 +86,8 @@ class SerialReader(threading.Thread):
             self.is_done = True
             self.receive_until = (time.time() +
                                   SerialReader.WAIT_FOR_DEVICE_TIMEOUT)
-            if self.heartbeat:
-                self.heartbeat.done()
+            if self.writer:
+                self.writer.done()
 
 
 class Heartbeat(threading.Thread):
@@ -116,9 +132,11 @@ def read_file(filename, appender, terminator=b'\r'):
         appender.done()
 
 
-def run_reader(port, appender, **kwargs):
+def run_reader(port, appender, writer=None, **kwargs):
     print('Reading ' + port + '. Type q or quit to quit.')
-    reader = SerialReader(port, appender, **kwargs)
+    if writer is None:
+        writer = Heartbeat
+    reader = SerialReader(port, appender, writer=writer, **kwargs)
     print('Starting {0}...'.format(port))
     reader.start()
     try:
