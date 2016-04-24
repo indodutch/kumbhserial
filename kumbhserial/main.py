@@ -15,15 +15,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Main functions to run scripts from.
+"""
+
 from __future__ import print_function
 
-from kumbhserial.helpers import output_filename
-from kumbhserial.interpreter import SeparatedTrackerEntrySetJsonConverter, \
-    TrackerInterpreter
-from kumbhserial.reader import run_reader, read_file
-from kumbhserial.sniffer import SnifferInterpreter
-from .appenders import Dumper, JsonListAppender, Duplicator, \
-    ThreadBuffer
+from .helpers import output_filename, dir_files
+from .interpreter import (SeparatedTrackerEntrySetJsonConverter,
+                          TrackerInterpreter)
+from .reader import run_reader, read_file
+from .sniffer import SnifferInterpreter
+from .appenders import (Dumper, JsonListAppender, Duplicator, ThreadBuffer,
+                        RawPrinter)
 from .ports import resolve_serial_port, choose_serial_port
 from .version import __version__
 import sys
@@ -81,11 +85,12 @@ def sniffer(argv=sys.argv[1:]):
     Listens to the sniffer node and outputs the real time and network time
     in JSON format. Output goes to $DATA/sniffer.
     Usage:
-      kumbhsniffer [-h] [-V] [--output dir] [<device_num>]
+      kumbhsniffer [-h] [-V] [--data dir] [--print] [<device_num>]
 
     Options:
       <device_num>       TTY or serial port number or name to listen to
       -d, --data dir     Data base directory [default: ./data]
+      -p, --print        Print data to screen
       -h, --help         This help text
       -V, --version      Version information
     """
@@ -94,7 +99,11 @@ def sniffer(argv=sys.argv[1:]):
     chosen_port = resolve_port(arguments['<device_num>'])
     filename = output_filename(os.path.join(arguments['--data'], 'sniffer'),
                                'sniffer', 'json')
-    interpreter = SnifferInterpreter(JsonListAppender(Dumper(filename)))
+    appender = JsonListAppender(Dumper(filename))
+    if arguments['--print']:
+        appender = Duplicator([appender, RawPrinter()])
+
+    interpreter = SnifferInterpreter(appender)
     read_device(chosen_port, interpreter, heartbeat=None)
 
 
@@ -162,6 +171,12 @@ def processor(argv=sys.argv[1:]):
 
 
 def resolve_port(port):
+    """
+    Resolve given port or query the user for it. The function will exit if the
+    user indicates it.
+    :param port: serial port name, number or None
+    :return: valid serial port name
+    """
     try:
         chosen_port = resolve_serial_port(port)
     except ValueError as ex:
@@ -180,6 +195,13 @@ def resolve_port(port):
 
 
 def read_device(port, appender, **kwargs):
+    """
+    Reads a given device and send the output to given appender. Runs run_reader
+    internally, and it will exit if the user quits.
+    :param port: serial port name
+    :param appender: appender to write the data to
+    :param kwargs: other arguments to run_reader
+    """
     try:
         run_reader(port, appender, **kwargs)
     except serial.SerialException as e:
@@ -189,9 +211,3 @@ def read_device(port, appender, **kwargs):
         sys.exit()
     except KeyboardInterrupt:
         sys.exit("Force quit")
-
-
-def dir_files(dir_name):
-    return [os.path.join(dir_name, f)
-            for f in os.listdir(dir_name)
-            if os.path.isfile(os.path.join(dir_name, f))]

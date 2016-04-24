@@ -15,6 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Parser and interpreter of the Kumbh Mela lanyard devices.
+"""
+
 import base64
 import sys
 from kumbhserial.appenders import JsonListAppender
@@ -24,6 +28,9 @@ from .appenders import Dumper
 
 
 class TrackerInterpreter(object):
+    """
+    Parses the raw data from the lanyard devices.
+    """
     def __init__(self, appender):
         self.appender = appender
         self.current_entries = None
@@ -106,6 +113,10 @@ class TrackerInterpreter(object):
 
 
 class TrackerEntrySet(object):
+    """
+    Interprets individual records of the lanyard devices. If their was a
+    problem with the device output, the error property will be set.
+     """
     separator = b'/' * 21
 
     def __init__(self, device_id, time):
@@ -127,6 +138,12 @@ class TrackerEntrySet(object):
         self._error = error
 
     def decode(self, b64data):
+        """
+        Decode the base 64 data and check the checksum. It will ignore the
+
+        :param b64data: 22 bytes of base64 encoded binary data.
+        :return: decoded bytes.
+        """
         # last line
         if b64data.startswith(TrackerEntrySet.separator):
             raise ValueError('separator')
