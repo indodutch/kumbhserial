@@ -1,5 +1,8 @@
-#!/usr/bin/env python
-# Copyright 2016 Zoltan Beck
+#!/usr/bin/env python3
+# Indo-Dutch Kumbh Mela experiment serial device reader
+#
+# Copyright 2015 Zoltan Beck, Netherlands eScience Center, and
+#                University of Amsterdam
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
