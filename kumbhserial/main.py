@@ -14,12 +14,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Apr 08 12:13:28 2016
 
-@author: Zoli
-"""
 from __future__ import print_function
 
 from kumbhserial.helpers import output_filename
