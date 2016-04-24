@@ -29,3 +29,5 @@ kumbhsniffer
 Unless otherwise specified, sniffer JSON data ends up in the `./data/sniffer` directory.
 
 To process any unprocessed files, run `kumbhprocessor`.
+
+To read the Thinture GPS devices with `kumbhgps`. Again, see the options with `-h` flag.

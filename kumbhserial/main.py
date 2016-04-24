@@ -21,10 +21,11 @@ Main functions to run scripts from.
 
 from __future__ import print_function
 
+from .gps import GpsInterpreter, GpsWriter
 from .helpers import output_filename, dir_files
 from .interpreter import (SeparatedTrackerEntrySetJsonConverter,
                           TrackerInterpreter)
-from .reader import run_reader, read_file
+from .reader import run_reader, read_file, SerialReader
 from .sniffer import SnifferInterpreter
 from .appenders import (Dumper, JsonListAppender, Duplicator, ThreadBuffer,
                         RawPrinter)
@@ -89,7 +90,7 @@ def sniffer(argv=sys.argv[1:]):
 
     Options:
       <device_num>       TTY or serial port number or name to listen to
-      -d, --data dir     Data base directory [default: ./data]
+      -d, --data dir     Data base directory [default: data]
       -p, --print        Print data to screen
       -h, --help         This help text
       -V, --version      Version information
@@ -118,7 +119,7 @@ def processor(argv=sys.argv[1:]):
 
     Options:
       <input>            File or directory to read from, if not [DATA]/raw.
-      -d, --data dir     Data base directory [default: ./data]
+      -d, --data dir     Data base directory [default: data]
       -h, --help         This help text
       -V, --version      Version information
     """
@@ -168,6 +169,58 @@ def processor(argv=sys.argv[1:]):
         except OSError as ex:
             print("Failed to move {0} to {1}: {2}"
                   .format(path, processed_dir, ex))
+
+
+def gps(argv=sys.argv[1:]):
+    """
+    Process raw files and convert them to JSON. Input is all files in
+    [DATA]/raw and output goes to [DATA]/system and [DATA]/detection. The
+    original file is moved to [DATA]/raw/processed.
+
+    Usage:
+      kumbhgps [-h] [-V] [--data dir] [--format format] [--no-lookup] [--no-clear] [<device_num>]
+
+    Options:
+      <device_num>         TTY or serial port number or name to listen to
+      -C, --no-clear       Do not clear the device after reading
+      -d, --data dir       Data base directory [default: data]
+      -h, --help           This help text
+      -L, --no-lookup      Do not look up the device number
+      -V, --version        Version information
+    """
+    arguments = docopt.docopt(gps.__doc__, argv, version=__version__)
+
+    if not arguments['--no-lookup']:
+        chosen_port = resolve_port(arguments['<device_num>'])
+    elif arguments['<device_num>']:
+        chosen_port = arguments['<device_num>']
+    else:
+        sys.exit('Provide a device if specifying --no-lookup')
+
+    filename = output_filename(os.path.join(arguments['--data'], 'gps'),
+                               'gps', 'json')
+
+    interpreter = GpsInterpreter(JsonListAppender(Dumper(filename)))
+    reader = SerialReader(chosen_port, interpreter, wait_time=1,
+                          baud_rate=115200, terminator=b'#',
+                          insert_timestamp_at=())
+    try:
+        writer = GpsWriter(reader.comm)
+        writer.start_transfer()
+        print("Reading...")
+        while not interpreter.is_done and interpreter.num_empty < 3:
+            reader.read()
+
+        if (interpreter.is_done and interpreter.num_records > 0 and
+                not arguments['--no-clear']):
+            writer.clear()
+            print("Cleared.")
+        else:
+            print("Done.")
+        writer.done()
+    finally:
+        reader.done()
+        interpreter.done()
 
 
 def resolve_port(port):

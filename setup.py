@@ -37,7 +37,8 @@ setup(name='kumbhserial',
         'console_scripts': [
             'kumbhdownload  = kumbhserial.main:download',
             'kumbhsniffer   = kumbhserial.main:sniffer',
-            'kumbhprocessor = kumbhserial.main:processor'
+            'kumbhprocessor = kumbhserial.main:processor',
+            'kumbhgps       = kumbhserial.main:gps',
         ]
       },
       classifiers=[

@@ -27,10 +27,9 @@ class SerialReader(threading.Thread):
     Reads a serial device, as provided in the Kumbh Mela project.
     """
 
-    WAIT_FOR_DEVICE_TIMEOUT = 12
-
     def __init__(self, port, appender, writer=None, terminator=b'\r',
-                 insert_timestamp_at=(b'>', b'<'), baud_rate=921600):
+                 insert_timestamp_at=(b'>', b'<'), baud_rate=921600,
+                 wait_time=12):
         """
         Starts a serial port reader.
         :param port: serial port name
@@ -56,20 +55,24 @@ class SerialReader(threading.Thread):
         self.exception = None
         self.terminator = terminator
         self.insert_timestamp_at = insert_timestamp_at
+        self.wait_time = wait_time
 
     def start(self):
         super().start()
         if self.writer:
             self.writer.start()
 
+    def read(self):
+        data = self.comm.read_until(terminator=self.terminator)
+        for token in self.insert_timestamp_at:
+            data = insert_timestamp(data, token)
+        self.appender.append(data)
+
     def run(self):
         print('started logger')
         try:
             while not self.is_done or time.time() < self.receive_until:
-                data = self.comm.read_until(terminator=self.terminator)
-                for token in self.insert_timestamp_at:
-                    data = insert_timestamp(data, token)
-                self.appender.append(data)
+                self.read()
             print('read stopped')
         except Exception as ex:
             self.exception = ex
@@ -84,8 +87,7 @@ class SerialReader(threading.Thread):
     def done(self):
         if not self.is_done:
             self.is_done = True
-            self.receive_until = (time.time() +
-                                  SerialReader.WAIT_FOR_DEVICE_TIMEOUT)
+            self.receive_until = (time.time() + self.wait_time)
             if self.writer:
                 self.writer.done()
 
@@ -144,10 +146,10 @@ def run_reader(port, appender, writer=None, **kwargs):
             text_in()  # waiting for user input
     except (ValueError, KeyboardInterrupt):
         print('Stopping {0}... WAIT {1} SECONDS!'
-              .format(reader.port, SerialReader.WAIT_FOR_DEVICE_TIMEOUT + 3))
+              .format(reader.port, reader.wait_time + 3))
     finally:
         reader.done()
-        reader.join(SerialReader.WAIT_FOR_DEVICE_TIMEOUT + 1)
+        reader.join(reader.wait_time + 1)
         if reader.exception:
             print('Failed to communicate: {0}'.format(reader.exception))
         print('Stopped {0}.'.format(reader.port))
