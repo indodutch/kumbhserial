@@ -1,4 +1,4 @@
-from nose.tools import assert_equals
+from nose.tools import assert_equals, assert_list_equal
 
 from kumbhserial.interpreter import TrackerEntrySet, TrackerInterpreter
 
@@ -41,3 +41,28 @@ def test_empty_tracker_interpreter():
     parser.append(b'\n<%2016-04-23T23:00:00.0000%0\r')
     parser.append(b'some junk\r')
     parser.done()
+
+
+def test_tracker_entryset():
+    tracker = TrackerEntrySet(0, None)
+    # invalid data explicitly mentioned
+    tracker.add_system(0, b'RVhQRVJJTUVOVF9EQVRBAA')
+    assert_equals([], tracker.system)
+    tracker.add_system(400, b'//////////////////////')
+    assert_equals([], tracker.system)
+    tracker.add_system(1, b'IQL6QD0AAAAwwQMAAPVAPQ')
+    assert_equals({'line': 1, 'auth': 12481, 'time': 4014330, 'density': 2,
+                   'rtc': 4014325, 'line': 1, 'reset': 1, 'state': 1,
+                   'detection': 0}, tracker.system[0])
+
+    tracker.add_detection(0, b'/////////////////////w')
+    assert_equals([], tracker.detections)
+    tracker.add_detection(0, b'XxsBcPAXDwFw8BcPAXDwFw')
+    assert_list_equal([{'line': 0, 'type': 0, 'id': 23, 'rssi': -47},
+                       {'line': 0, 'type': 0, 'id': 23, 'rssi': -35},
+                       {'line': 0, 'type': 0, 'id': 23, 'rssi': -35},
+                       {'line': 0, 'type': 0, 'id': 23, 'rssi': -35},
+                       {'line': 0, 'type': 0, 'id': 23, 'rssi': -35},
+                       {'line': 0, 'type': 0, 'id': 23, 'rssi': -35}],
+                      tracker.detections)
+

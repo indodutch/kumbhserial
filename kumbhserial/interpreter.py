@@ -51,7 +51,7 @@ class TrackerInterpreter(object):
                     if line[6:].startswith(b':'):
                         self.current_entries.add_detection(line_id, line[7:])
                     elif line[6:].startswith(b'-'):
-                        self.current_entries.add_status(line_id, line[7:])
+                        self.current_entries.add_system(line_id, line[7:])
                     else:
                         self.log(
                             error=b'Invalid device log line format: ' + line)
@@ -127,7 +127,7 @@ class TrackerEntrySet(object):
 
             return binary_data
 
-    def add_status(self, line_id, b64data):
+    def add_system(self, line_id, b64data):
         try:
             hex_data = self.decode(b64data)
         except ValueError:
