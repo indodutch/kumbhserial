@@ -70,6 +70,8 @@ def choose_serial_port():
 
 
 def resolve_serial_port(name):
+    if name is None:
+        return None
     ports = serial_ports()
     try:
         return select_value_from_list(name, ports)
