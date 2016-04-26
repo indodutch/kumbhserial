@@ -19,6 +19,44 @@ import serial
 import threading
 import time
 from .helpers import text_in, insert_timestamp
+import sys
+
+
+class ReaderSet(object):
+    def __init__(self):
+        self.readers = []
+
+    def __repr__(self):
+        self.update()
+        if len(self.readers) == 0:
+            return 'Not listening to any devices'
+        else:
+            return ('\nNow listening to: {0}'
+                    .format(''.join(['\n* ' + str(r.interpreter)
+                                     for r in self.readers])))
+
+    def start(self, reader):
+        reader.start()
+        self.readers.append(reader)
+
+    def update(self):
+        new_readers = []
+        for r in self.readers:
+            if r.is_alive():
+                new_readers.append(r)
+            else:
+                r.join()
+
+        self.readers = new_readers
+
+    def stop(self):
+        print("Waiting for GPS to finish...")
+        try:
+            for r in self.readers:
+                r.join()
+        except KeyboardInterrupt:
+            sys.exit('GPS devices may not be entirely read or cleared. '
+                     'Incomplete files may be left.')
 
 
 class SerialReader(threading.Thread):

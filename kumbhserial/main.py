@@ -21,11 +21,11 @@ Main functions to run scripts from.
 
 from __future__ import print_function
 
-from .gps import GpsInterpreter, GpsWriter, GpsReaderThread
+from .gps import GpsReaderThread
 from .helpers import output_filename, dir_files
 from .interpreter import (SeparatedTrackerEntrySetJsonConverter,
                           TrackerInterpreter)
-from .reader import run_reader, read_file, SerialReader
+from .reader import run_reader, read_file, ReaderSet
 from .sniffer import SnifferInterpreter
 from .appenders import (Dumper, JsonListAppender, Duplicator, ThreadBuffer,
                         RawPrinter)
@@ -178,10 +178,11 @@ def gps(argv=sys.argv[1:]):
     original file is moved to [DATA]/raw/processed.
 
     Usage:
-      kumbhgps [-h] [-V] [--data dir] [--format format] [--no-lookup] [--no-clear] [<device_num>]
+      kumbhgps [-h] [-V] [--data dir] [--format format] [--no-lookup] [--no-clear] [--listen] [<device_num>]
 
     Options:
       <device_num>         TTY or serial port number or name to listen to
+      -l, --listen         Keep listening for devices.
       -C, --no-clear       Do not clear the device after reading
       -d, --data dir       Data base directory [default: data]
       -h, --help           This help text
@@ -189,6 +190,10 @@ def gps(argv=sys.argv[1:]):
       -V, --version        Version information
     """
     arguments = docopt.docopt(gps.__doc__, argv, version=__version__)
+
+    if arguments['--listen']:
+        continuousgps(arguments)
+        return
 
     if not arguments['--no-lookup']:
         chosen_port = resolve_port(arguments['<device_num>'])
@@ -198,7 +203,7 @@ def gps(argv=sys.argv[1:]):
         sys.exit('Provide a device if specifying --no-lookup')
 
     filename = output_filename(os.path.join(arguments['--data'], 'gps'),
-                               'gps', 'json')
+                       'gps', 'json')
 
     try:
         reader = GpsReaderThread(chosen_port, JsonListAppender(Dumper(filename)),
@@ -209,6 +214,28 @@ def gps(argv=sys.argv[1:]):
         reader.start()
         reader.join()
         print("Quit.")
+
+
+def continuousgps(arguments):
+    readers = ReaderSet()
+    try:
+        while True:
+            chosen_port = choose_serial_port(readers)
+            filename = output_filename(
+                os.path.join(arguments['--data'], 'gps'), 'gps', 'json')
+            try:
+                readers.start(GpsReaderThread(
+                    chosen_port, JsonListAppender(Dumper(filename)),
+                    clear=not arguments['--no-clear']))
+            except serial.SerialException as ex:
+                print('Cannot open serial port {0}: {1}'.format(chosen_port, ex))
+    except ValueError as ex:
+        readers.stop()
+        print(ex)
+        sys.exit(0)
+    except KeyboardInterrupt as ex:
+        readers.stop()
+        sys.exit(ex)
 
 
 def resolve_port(port):

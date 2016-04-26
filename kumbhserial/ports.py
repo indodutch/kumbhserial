@@ -50,22 +50,27 @@ def serial_ports():
     return result
 
 
-def choose_serial_port():
+def choose_serial_port(preamble=None):
     while True:
         ports = serial_ports()
 
+        if preamble is not None:
+            print(preamble)
         if len(ports) > 0:
-            print('Pick a serial port (type q or quit to quit):%s' % (' '.join(
-                ['\n%d: %s' % (i, l) for i, l in enumerate(ports)]),))
+            print('{0}\nSerial port '
+                  '(leave empty to reload, type q or quit to quit):'
+                  .format('\n'.join(['{0}: {1}'.format(i, l)
+                                     for i, l in enumerate(ports)])))
 
             text = text_in()
-            try:
-                return select_value_from_list(text, ports)
-            except (ValueError, IndexError):
-                print('Given port not in the list. Try again.')
+            if len(text) > 0:
+                try:
+                    return select_value_from_list(text, ports)
+                except (ValueError, IndexError):
+                    print('ERROR: Given port not in the list. Try again.')
         else:
-            print('No serial device detected, please plug in bracelet.\n'
-                  'Press ENTER to retry, type q or quit to quit).')
+            print('No serial device detected, please plug in device.\n'
+                  'Press ENTER to reload, type q or quit to quit).')
             text_in()
 
 
