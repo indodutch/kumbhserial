@@ -21,7 +21,7 @@ Main functions to run scripts from.
 
 from __future__ import print_function
 
-from .gps import GpsInterpreter, GpsWriter
+from .gps import GpsInterpreter, GpsWriter, GpsReaderThread
 from .helpers import output_filename, dir_files
 from .interpreter import (SeparatedTrackerEntrySetJsonConverter,
                           TrackerInterpreter)
@@ -200,27 +200,15 @@ def gps(argv=sys.argv[1:]):
     filename = output_filename(os.path.join(arguments['--data'], 'gps'),
                                'gps', 'json')
 
-    interpreter = GpsInterpreter(JsonListAppender(Dumper(filename)))
-    reader = SerialReader(chosen_port, interpreter, wait_time=1,
-                          baud_rate=115200, terminator=b'#',
-                          insert_timestamp_at=())
     try:
-        writer = GpsWriter(reader.comm)
-        writer.start_transfer()
-        print("Reading...")
-        while not interpreter.is_done and interpreter.num_empty < 3:
-            reader.read()
-
-        if (interpreter.is_done and interpreter.num_records > 0 and
-                not arguments['--no-clear']):
-            writer.clear()
-            print("Cleared.")
-        else:
-            print("Done.")
-        writer.done()
-    finally:
-        reader.done()
-        interpreter.done()
+        reader = GpsReaderThread(chosen_port, JsonListAppender(Dumper(filename)),
+                                 clear=not arguments['--no-clear'])
+    except serial.SerialException as ex:
+        print('Cannot open serial port {0}: {1}'.format(chosen_port, ex))
+    else:
+        reader.start()
+        reader.join()
+        print("Quit.")
 
 
 def resolve_port(port):
