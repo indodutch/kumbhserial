@@ -8,7 +8,6 @@ Install requirements first
 
 ```shell
 pip install -r requirements.txt
-pip install .
 ```
 
 ### Run ###
