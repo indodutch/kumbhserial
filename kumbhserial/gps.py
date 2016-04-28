@@ -56,7 +56,7 @@ class GpsReaderThread(threading.Thread):
             else:
                 print('Done reading {0}.'.format(self.interpreter))
         except serial.SerialException as ex:
-            print('Failed to read serial device {0}'
+            print('Failed to read serial device {0}: {1}'
                   .format(self.interpreter, ex))
         finally:
             self.reader.done()
