@@ -1,18 +1,22 @@
-# README #
+# Kumbh Mela serial devices #
 
-Python 3 implementation of the data logging example code.
+[![Build Status](https://travis-ci.org/indodutch/kumbhserial.svg?branch=master)](https://travis-ci.org/indodutch/kumbhserial)
 
-### Setup ###
+Python 3 implementation for extracting data from devices in Kumbh Mela with a serial device driver.
 
-Install requirements first
+## Installation ##
+
+Use virtualenv or virtualenvwrapper to set up a suitable Python 3.4 or 3.5 environment.
+
+Install the project with
 
 ```shell
 pip install -r requirements.txt
 ```
 
-### Run ###
+## Usage ##
 
-To use read out the data from the download devices, run:
+To read out the data from the download devices, run:
 
 ```shell
 kumbhdownload
