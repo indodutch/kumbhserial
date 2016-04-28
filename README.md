@@ -1,6 +1,7 @@
 # Kumbh Mela serial devices #
 
 [![Build Status](https://travis-ci.org/indodutch/kumbhserial.svg?branch=master)](https://travis-ci.org/indodutch/kumbhserial)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/36476556fdc94aa1b4a15ea978924e93)](https://www.codacy.com/app/github_4/kumbhserial?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=indodutch/kumbhserial&amp;utm_campaign=Badge_Grade)
 
 Python 3 implementation for extracting data from devices in Kumbh Mela with a serial device driver.
 
