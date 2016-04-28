@@ -14,5 +14,5 @@ script:
   # Test the processor, which does not need any serial device
   - touch data/raw/test_raw.txt
   - kumbhprocessor
-  - test -e data/detections/test_raw.json
-  - test -e data/system/test_raw.json
+  - test -e data/detection/detection-test_raw.json
+  - test -e data/system/system-test_raw.json
