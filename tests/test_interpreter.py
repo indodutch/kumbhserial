@@ -43,8 +43,7 @@ def test_empty_tracker_interpreter():
                       {'line': 0, 'type': 0, 'id': 23, 'rssi': -35},
                       {'line': 0, 'type': 0, 'id': 23, 'rssi': -35}]
     out.system = [{'line': 1, 'auth': 12481, 'time': 4014330, 'density': 2,
-                   'rtc': 4014325, 'line': 1, 'reset': 1, 'state': 1,
-                   'detection': 0}]
+                   'rtc': 4014325, 'reset': 1, 'state': 1, 'detection': 0}]
     out.end_time = '2016-04-23T23:00:00.0000'
 
     parser = TrackerInterpreter(MockAppender((out,)))
@@ -69,8 +68,8 @@ def test_tracker_entryset():
     assert_equals([], tracker.system)
     tracker.add_system(1, b'IQL6QD0AAAAwwQMAAPVAPQ')
     assert_equals({'line': 1, 'auth': 12481, 'time': 4014330, 'density': 2,
-                   'rtc': 4014325, 'line': 1, 'reset': 1, 'state': 1,
-                   'detection': 0}, tracker.system[0])
+                   'rtc': 4014325, 'reset': 1, 'state': 1, 'detection': 0},
+                  tracker.system[0])
 
     tracker.add_detection(0, b'/////////////////////w')
     assert_equals([], tracker.detections)
