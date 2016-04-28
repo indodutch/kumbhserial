@@ -20,7 +20,6 @@
 import json
 import threading
 import queue
-from .helpers import output_filename
 
 
 class Dumper(object):

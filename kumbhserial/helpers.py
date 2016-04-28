@@ -102,6 +102,7 @@ def dir_files(dir_name):
     Find all files in given directory, non-recursively.
     :param dir_name: directory path
     :return: list of file names
+    :raises FileNotFoundError: if directory does not exist
     """
     return [os.path.join(dir_name, f)
             for f in os.listdir(dir_name)

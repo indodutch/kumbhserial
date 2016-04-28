@@ -134,10 +134,14 @@ def processor(argv=sys.argv[1:]):
             sys.exit('Input path {0} does not exist.'
                      .format(arguments['<input>']))
     else:
-        files = dir_files(os.path.join(arguments['--data'], 'raw'))
+        input_path = os.path.join(arguments['--data'], 'raw')
+        try:
+            files = dir_files(input_path)
+        except FileNotFoundError:
+            sys.exit('Input path {0} does not exist.'
+                     .format(input_path))
 
-    processed_dir = os.path.join(arguments['--data'], 'raw',
-                                 'processed')
+    processed_dir = os.path.join(arguments['--data'], 'raw', 'processed')
 
     if len(files) == 0:
         print("No files to be processed")

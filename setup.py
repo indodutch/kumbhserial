@@ -23,6 +23,7 @@ try:
 except ImportError:
     from distutils.core import setup, find_packages
 
+__version__ = None
 exec(open('kumbhserial/version.py').read())
 
 setup(name='kumbhserial',
