@@ -15,6 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Kumbh Mela serial device reader
+"""
+
 from .ports import serial_ports, choose_serial_port
 from .interpreter import (TrackerInterpreter,
                           SeparatedTrackerEntrySetJsonConverter)

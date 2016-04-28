@@ -85,6 +85,16 @@ def choose_serial_port(preamble=None):
 
 
 def resolve_serial_port(name):
+    """
+    Resolve a literal serial port from given string.
+    A literal serial port name will be returned with correct case, a number
+    as the index of all serial ports, None will be returned as None.
+    :param name: string containing a serial port name, an index number. May be
+        None.
+    :return: literal serial port name or None.
+    :raises ValueError: if the given string cannot be translated to a serial
+        port.
+    """
     if name is None:
         return None
     ports = serial_ports()
