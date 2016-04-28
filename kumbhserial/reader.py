@@ -15,6 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Read from a serial device
+"""
+
 import serial
 import threading
 import time
@@ -23,6 +27,7 @@ import sys
 
 
 class ReaderSet(object):
+    """ Set of active readers """
     def __init__(self):
         self.readers = []
 
@@ -36,10 +41,17 @@ class ReaderSet(object):
                                      for r in self.readers])))
 
     def start(self, reader):
+        """
+        Add and start a SerialReader thread.
+        :param reader: SerialReader thread not yet called start() on.
+        """
         reader.start()
         self.readers.append(reader)
 
     def update(self):
+        """
+        Updates the status of the readers and remove inactive readers.
+        """
         new_readers = []
         for r in self.readers:
             if r.is_alive():
@@ -49,9 +61,16 @@ class ReaderSet(object):
 
         self.readers = new_readers
 
-    def stop(self):
+    def stop(self, call_done=False):
+        """
+        Waits until all readers have finished.
+        :param call_done: call the done() method on all readers before waiting.
+        """
         print("Waiting for GPS to finish...")
         try:
+            if call_done:
+                for r in self.readers:
+                    r.done()
             for r in self.readers:
                 r.join()
         except KeyboardInterrupt:
@@ -96,17 +115,27 @@ class SerialReader(threading.Thread):
         self.wait_time = wait_time
 
     def start(self):
+        """
+        Start the current thread and the writer thread, if any.
+        """
         super().start()
         if self.writer:
             self.writer.start()
 
     def read(self):
+        """
+        Read data from the device (up to terminator) and write it to the
+        appender.
+        """
         data = self.comm.read_until(terminator=self.terminator)
         for token in self.insert_timestamp_at:
             data = insert_timestamp(data, token)
         self.appender.append(data)
 
     def run(self):
+        """
+        Reads data until the thread is signalled done.
+        """
         print('started logger')
         try:
             while not self.is_done or time.time() < self.receive_until:
@@ -117,12 +146,21 @@ class SerialReader(threading.Thread):
             print('read or write failed, press ENTER to quit.')
 
     def join(self, timeout=None):
+        """
+        Waits for the thread to finish and once it is finished, marks the
+        appender with done().
+        :param timeout: if thread did not join after timeout, mark the appender
+            done anyway and return.
+        """
         try:
             super().join(timeout=timeout)
         finally:
             self.appender.done()
 
     def done(self):
+        """
+        Mark the reader thread and writer thread, if any, as done.
+        """
         if not self.is_done:
             self.is_done = True
             self.receive_until = (time.time() + self.wait_time)
@@ -131,6 +169,11 @@ class SerialReader(threading.Thread):
 
 
 class Heartbeat(threading.Thread):
+    """
+    Sends a heartbeat signal '@' to the serial port.
+    :param comm: serial device
+    :param sleep: time to sleep before sending heartbeat.
+    """
     def __init__(self, comm, sleep=1):
         super().__init__()
         self.comm = comm
@@ -138,11 +181,14 @@ class Heartbeat(threading.Thread):
         self.is_done = False
 
     def run(self):
+        """
+        Send a heartbeat signal while not done.
+        """
         print('Heartbeat started')
         try:
             while not self.is_done:
                 self.comm.write(b'@')
-                time.sleep(1)
+                time.sleep(self.sleep)
         except:
             print('Sending heartbeat failed')
             raise
@@ -150,10 +196,19 @@ class Heartbeat(threading.Thread):
         print('Heartbeat finished')
 
     def done(self):
+        """
+        Marks the heartbeat as done.
+        """
         self.is_done = True
 
 
 def read_file(filename, appender, terminator=b'\r'):
+    """
+    Read a file and send the output to given appender
+    :param filename: filename to read
+    :param appender: appender to append file contents to
+    :param terminator: end-of-record terminator
+    """
     buffer = b''
     buffer_size = 1024
     with open(filename, 'rb') as f:
@@ -173,6 +228,16 @@ def read_file(filename, appender, terminator=b'\r'):
 
 
 def run_reader(port, appender, writer=None, **kwargs):
+    """
+    Read from a device and send the output to given appender.
+
+    :param port: serial port device name
+    :param appender: appender to append data to
+    :param writer: serial port writer class. Must have __init__ function with
+        as argument the serial object, must be a Thread and have a done method.
+        If None, the Heartbeat class will be used.
+    :param kwargs: all other arguments will be passed to SerialReader.
+    """
     print('Reading ' + port + '. Type q or quit to quit.')
     if writer is None:
         writer = Heartbeat
