@@ -20,11 +20,7 @@ Parser and interpreter of the Kumbh Mela lanyard devices.
 """
 
 import base64
-import sys
-from kumbhserial.appenders import JsonListAppender
-from kumbhserial.reader import read_file
 from .helpers import timestamp
-from .appenders import Dumper
 
 
 class TrackerInterpreter(object):
@@ -144,7 +140,10 @@ class TrackerEntrySet(object):
         :param b64data: 22 bytes of base64 encoded binary data.
         :return: decoded bytes.
         """
-        # last line
+        # The last line of a detection log has the last (one or more)
+        # 16bit samples set with all bits 1, in base 64 representation
+        #  the last two characters are // as a result and the
+        # character preceding it must be f, v or /.
         if b64data.startswith(TrackerEntrySet.separator):
             raise ValueError('separator')
 
@@ -230,10 +229,6 @@ class TrackerEntrySet(object):
         #
         # etc...
         for i in range(0, 30, 5):
-            # The last line of a detection log has the last (one or more)
-            # 16bit samples set with all bits 1, in base 64 representation
-            #  the last two characters are // as a result and the
-            # character preceding it must be f, v or /.
             if (oct_data[i] &
                     oct_data[i + 1] &
                     oct_data[i + 2] &
@@ -263,11 +258,11 @@ class TrackerEntrySet(object):
             })
 
     def __str__(self):
-        if self.error is None:
-            return 'Device({0} detections, {1} system, {2})'.format(
+        ret = 'Device({0} detections, {1} system, {2})'.format(
                 len(self.detections), len(self.system), self.time)
-        else:
-            return 'Device(error: {0}, {2})'.format(self.error, self.time)
+        if self.error is not None:
+            ret += ' failed: {0}'.format(self.error)
+        return ret
 
     def __repr__(self):
         if self.error is None:
@@ -292,6 +287,9 @@ class TrackerEntrySet(object):
 
 
 class TrackerEntrySetAppender(object):
+    """
+    Converts a TrackerEntrySet to a single dict without data duplication.
+    """
     def __init__(self, appender):
         self.appender = appender
 
@@ -313,6 +311,11 @@ class TrackerEntrySetAppender(object):
 
 
 class SeparatedTrackerEntrySetJsonConverter(object):
+    """
+    Converts a TrackerEntrySet to a detections and system dict. The output
+    dict does not have any nested dicts or lists and has some data duplication
+    (id, time, endTime).
+    """
     def __init__(self, appender_detections, appender_system):
         self.appender_detections = appender_detections
         self.appender_system = appender_system
@@ -340,6 +343,10 @@ class SeparatedTrackerEntrySetJsonConverter(object):
 
 
 if __name__ == '__main__':
+    import sys
+    from .appenders import JsonListAppender, Dumper
+    from .reader import read_file
+
     parser = TrackerInterpreter(
         SeparatedTrackerEntrySetJsonConverter(
             JsonListAppender(Dumper(sys.argv[2])),
