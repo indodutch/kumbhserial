@@ -64,8 +64,8 @@ def download(argv=sys.argv[1:]):
                                           'dump-' + port_id, 'txt'))
     else:
         dumper = Dumper(output_filename(os.path.join(arguments['--data'],
-                                                     'raw','processed'),
-                                   'dump-' + port_id, 'txt'))
+                                                     'raw', 'processed'),
+                                        'dump-' + port_id, 'txt'))
         filename_detections = output_filename(
             os.path.join(arguments['--data'], 'detection'),
             'detection-' + port_id, 'json')
@@ -192,7 +192,7 @@ def gps(argv=sys.argv[1:]):
     arguments = docopt.docopt(gps.__doc__, argv, version=__version__)
 
     if arguments['--listen']:
-        continuousgps(arguments)
+        continuous_gps(arguments)
         return
 
     if not arguments['--no-lookup']:
@@ -203,10 +203,11 @@ def gps(argv=sys.argv[1:]):
         sys.exit('Provide a device if specifying --no-lookup')
 
     filename = output_filename(os.path.join(arguments['--data'], 'gps'),
-                       'gps', 'json')
+                               'gps', 'json')
 
     try:
-        reader = GpsReaderThread(chosen_port, JsonListAppender(Dumper(filename)),
+        reader = GpsReaderThread(chosen_port,
+                                 JsonListAppender(Dumper(filename)),
                                  clear=not arguments['--no-clear'])
     except serial.SerialException as ex:
         print('Cannot open serial port {0}: {1}'.format(chosen_port, ex))
@@ -216,7 +217,11 @@ def gps(argv=sys.argv[1:]):
         print("Quit.")
 
 
-def continuousgps(arguments):
+def continuous_gps(arguments):
+    """
+    Continuously listen for new GPS devices.
+    :param arguments: dict of arguments from docopt
+    """
     readers = ReaderSet()
     try:
         while True:
@@ -228,7 +233,8 @@ def continuousgps(arguments):
                     chosen_port, JsonListAppender(Dumper(filename)),
                     clear=not arguments['--no-clear']))
             except serial.SerialException as ex:
-                print('Cannot open serial port {0}: {1}'.format(chosen_port, ex))
+                print('Cannot open serial port {0}: {1}'
+                      .format(chosen_port, ex))
     except ValueError as ex:
         readers.stop()
         print(ex)

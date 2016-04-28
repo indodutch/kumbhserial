@@ -15,6 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Listing and selecting serial port devices.
+"""
+
 import sys
 import glob
 import serial
@@ -22,12 +26,11 @@ from .helpers import text_in, select_value_from_list
 
 
 def serial_ports():
-    """ Lists serial port names
+    """
+    Lists serial port names
 
-        :raises EnvironmentError:
-            On unsupported or unknown platforms
-        :returns:
-            A list of the serial ports available on the system
+    :raises EnvironmentError: On unsupported or unknown platforms
+    :return: A list of the serial ports available on the system
     """
     if sys.platform.startswith('win'):
         ports = ['COM%s' % (i + 1) for i in range(256)]
@@ -51,6 +54,13 @@ def serial_ports():
 
 
 def choose_serial_port(preamble=None):
+    """
+    Choose a serial port with a terminal prompt.
+    :param preamble: object to print before the prompt.
+    :return: serial port device name
+    :raise ValueError: user quit by typing quit command.
+    :raise KeyboardInterrupt: user quit by sending an interrupt.
+    """
     while True:
         ports = serial_ports()
 

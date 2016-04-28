@@ -204,7 +204,7 @@ class Heartbeat(threading.Thread):
 
 def read_file(filename, appender, terminator=b'\r'):
     """
-    Read a file and send the output to given appender
+    Read a file and send the output to given appender.
     :param filename: filename to read
     :param appender: appender to append file contents to
     :param terminator: end-of-record terminator

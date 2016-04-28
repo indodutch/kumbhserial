@@ -23,6 +23,8 @@ from .reader import SerialReader, run_reader, read_file
 from .sniffer import SnifferInterpreter
 from .appenders import (JsonListAppender, Dumper, RawPrinter, Duplicator,
                         ThreadBuffer)
+from .version import __version__, __version_info__
+
 
 __all__ = [
     'serial_ports',
@@ -41,4 +43,6 @@ __all__ = [
     'RawPrinter',
     'Duplicator',
     'ThreadBuffer',
+    '__version__',
+    '__version_info__',
 ]
