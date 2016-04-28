@@ -24,7 +24,14 @@ from .helpers import output_filename
 
 
 class Dumper(object):
+    """
+    Dumps bytes data to file.
+    """
     def __init__(self, path, flush=True):
+        """
+        :param path: file path to write to.
+        :param flush: flush to file after writing. Slower but safer.
+        """""
         self.file = open(path, 'wb')
         self.flush = flush
 
@@ -40,6 +47,9 @@ class Dumper(object):
 
 
 class Duplicator(object):
+    """
+    Send the same incoming data to a sequence of appenders.
+    """
     def __init__(self, appenders):
         self.appenders = appenders
 
@@ -53,6 +63,9 @@ class Duplicator(object):
 
 
 class RawPrinter(object):
+    """
+    Print incoming data to console.
+    """
     def append(self, data):
         print(data)
 
@@ -61,6 +74,10 @@ class RawPrinter(object):
 
 
 class JsonListAppender(object):
+    """
+    Convert incoming data to a list of json objects. Each call to append will
+    add one JSON object to a JSON list.
+    """
     def __init__(self, appender):
         self.appender = appender
         self.first = True
@@ -81,6 +98,11 @@ class JsonListAppender(object):
 
 
 class ThreadBuffer(threading.Thread):
+    """
+    Put a thread between the sender and the receiver, so that these can act
+    concurrently. This is helpful if both the sender and receiver do
+    independent I/O operations.
+    """
     def __init__(self, appender, **kwargs):
         self.appender = appender
         self.queue = queue.Queue()
@@ -97,7 +119,7 @@ class ThreadBuffer(threading.Thread):
                 data = self.queue.get(timeout=1)
                 self.appender.append(data)
             except queue.Empty:
-                pass
+                pass  # no input yet, check if is_done
 
     def join(self, **kwargs):
         self.done()
@@ -110,8 +132,3 @@ class ThreadBuffer(threading.Thread):
         if not self.is_done:
             self.is_done = True
             self.join()
-
-
-def create_dumper_file(port, output_dir='data'):
-    port_id = port.split('/')[-1]
-    return output_filename(output_dir, 'dump-' + port_id, 'txt')

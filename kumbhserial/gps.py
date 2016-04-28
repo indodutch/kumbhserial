@@ -15,14 +15,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Facilities to read out the Kumbh Mela GPS devices.
+"""
+
 import threading
-
 import serial
-
 from .reader import SerialReader
 
 
 class GpsReaderThread(threading.Thread):
+    """
+    Thread to read out a GPS device
+    """
     def __init__(self, port, appender, clear=True, **kwargs):
         super().__init__()
         self.interpreter = GpsInterpreter(port, appender)
@@ -43,8 +48,8 @@ class GpsReaderThread(threading.Thread):
             if self.interpreter.has_error():
                 print('Error parsing {0}'.format(self.interpreter))
             elif self.interpreter.num_records == 0:
-                print('Device <{0}> empty or not a GPS device.'
-                      .format(self.reader.port))
+                print('Device <{0}> is empty, set to CHARGE mode, or not a'
+                      ' GPS device.'.format(self.reader.port))
             elif self.clear:
                 writer.clear()
                 print("Cleared {0}. Done.".format(self.interpreter))
@@ -60,6 +65,9 @@ class GpsReaderThread(threading.Thread):
 
 
 class GpsWriter(object):
+    """
+    GPS commands.
+    """
     def __init__(self, comm):
         self.comm = comm
 
@@ -71,6 +79,16 @@ class GpsWriter(object):
 
 
 class GpsInterpreter(object):
+    """
+    Interprets the output of a GPS serial device and outputs a dict.
+
+    Records num_records as the number of valid records, and num_empty
+    as the number of consecutive empty data strings received. If num_empty is
+    large, most probably the GPS device will not send any output at all. If the
+    end of the data stream is reached, according to the device data, the
+    interpreter will set is_done to True. The current_id is known as soon as
+    valid data comes in, which contains the device id.
+    """
     def __init__(self, port, appender):
         self.appender = appender
         self.errors = []
@@ -91,6 +109,7 @@ class GpsInterpreter(object):
         self.num_empty = 0
         self.num_records += 1
         data = str(data, encoding='ascii')
+
         if data == '@':
             self.done()
         if not data.endswith('#'):
