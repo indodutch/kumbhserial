@@ -1,0 +1,20 @@
+language: python
+python:
+  - "3.4"
+  - "3.5"
+install:
+  - pip install -U pip
+  - pip install -r requirements.txt
+  - pip install -r test_requirements.txt
+before_script:
+  - mkdir -p data/raw
+script:
+  - test $(pyflakes kumbhserial setup.py | tee /dev/stderr | wc -l) -eq 0
+  - nosetests
+  # Test the processor, which does not need any serial device
+  - touch data/raw/test_raw.txt
+  - kumbhprocessor
+  - test ! -e data/raw/test_raw.txt
+  - test -e data/raw/processed/test_raw.txt
+  - test -e data/detection/detection-test_raw-*.json
+  - test -e data/system/system-test_raw-*.json

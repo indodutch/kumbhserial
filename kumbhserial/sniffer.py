@@ -15,19 +15,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
+"""
+Handle the Salland Electronics sniffer node.
+"""
 
-from kumbhserial.reader import read_file
 from .helpers import timestamp
-from .appenders import JsonListAppender, Dumper
 
 
 class SnifferInterpreter(object):
+    """
+    Interprets the output of the Salland Electronics sniffer node. Accepts
+    bytes and sends dict objects to given appender with the output data.
+    """
     def __init__(self, appender):
         self.appender = appender
         self.line_number = 0
 
     def append(self, line):
+        """
+        Parse bytes data and convert it to a dict.
+        :param line: a single record of bytes data.
+        """
         line = line.strip()
         if len(line) == 0:
             return
@@ -52,9 +60,16 @@ class SnifferInterpreter(object):
         self.appender.append(sniffed)
 
     def done(self):
+        """
+        Mark the interpreter and its appender as done.
+        """
         self.appender.done()
 
 
 if __name__ == '__main__':
+    import sys
+    from .appenders import JsonListAppender, Dumper
+    from .reader import read_file
+
     parser = SnifferInterpreter(JsonListAppender(Dumper(sys.argv[2])))
     read_file(sys.argv[1], parser)

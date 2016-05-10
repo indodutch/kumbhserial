@@ -15,6 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Listing and selecting serial port devices.
+"""
+
 import sys
 import glob
 import serial
@@ -22,12 +26,12 @@ from .helpers import text_in, select_value_from_list
 
 
 def serial_ports():
-    """ Lists serial port names
+    """
+    Lists serial port names. It may take some time: for each of the systems
+    serial ports it checks whether it is accessible for the current user.
 
-        :raises EnvironmentError:
-            On unsupported or unknown platforms
-        :returns:
-            A list of the serial ports available on the system
+    :raises EnvironmentError: unsupported operating system or platform.
+    :return: A list of the serial ports available on the system
     """
     if sys.platform.startswith('win'):
         ports = ['COM%s' % (i + 1) for i in range(256)]
@@ -50,26 +54,50 @@ def serial_ports():
     return result
 
 
-def choose_serial_port():
+def choose_serial_port(preamble=None):
+    """
+    Choose a serial port with a terminal prompt.
+    :param preamble: object to print before the prompt.
+    :return: serial port device name
+    :raise ValueError: user quit by typing quit command.
+    :raise KeyboardInterrupt: user quit by sending an interrupt.
+    """
     while True:
         ports = serial_ports()
 
+        if preamble is not None:
+            print(preamble)
         if len(ports) > 0:
-            print('Pick a serial port (type q or quit to quit):%s' % (' '.join(
-                ['\n%d: %s' % (i, l) for i, l in enumerate(ports)]),))
+            print('{0}\nSerial port '
+                  '(leave empty to reload, type q or quit to quit):'
+                  .format('\n'.join(['{0}: {1}'.format(i, l)
+                                     for i, l in enumerate(ports)])))
 
             text = text_in()
-            try:
-                return select_value_from_list(text, ports)
-            except (ValueError, IndexError):
-                print('Given port not in the list. Try again.')
+            if len(text) > 0:
+                try:
+                    return select_value_from_list(text, ports)
+                except (ValueError, IndexError):
+                    print('ERROR: Given port not in the list. Try again.')
         else:
-            print('No serial device detected, please plug in bracelet.\n'
-                  'Press ENTER to retry, type q or quit to quit).')
+            print('No serial device detected, please plug in device.\n'
+                  'Press ENTER to reload, type q or quit to quit).')
             text_in()
 
 
 def resolve_serial_port(name):
+    """
+    Resolve a literal serial port from given string.
+    An input of a serial port name will try to be matched to available serial
+    ports. An input number string is taken as the index of serial ports.
+    None will be returned as None.
+    :param name: string containing a serial port name or an index number. May
+        be None.
+    :return: exact serial port name or None.
+    :raises ValueError: if given string cannot be translated to a serial port.
+    """
+    if name is None:
+        return None
     ports = serial_ports()
     try:
         return select_value_from_list(name, ports)

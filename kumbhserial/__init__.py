@@ -15,6 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Kumbh Mela serial device reader
+"""
+
 from .ports import serial_ports, choose_serial_port
 from .interpreter import (TrackerInterpreter,
                           SeparatedTrackerEntrySetJsonConverter)
@@ -23,6 +27,8 @@ from .reader import SerialReader, run_reader, read_file
 from .sniffer import SnifferInterpreter
 from .appenders import (JsonListAppender, Dumper, RawPrinter, Duplicator,
                         ThreadBuffer)
+from .version import __version__, __version_info__
+
 
 __all__ = [
     'serial_ports',
@@ -41,4 +47,6 @@ __all__ = [
     'RawPrinter',
     'Duplicator',
     'ThreadBuffer',
+    '__version__',
+    '__version_info__',
 ]

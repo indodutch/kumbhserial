@@ -21,11 +21,11 @@ Main functions to run scripts from.
 
 from __future__ import print_function
 
-from .gps import GpsInterpreter, GpsWriter
+from .gps import GpsReaderThread
 from .helpers import output_filename, dir_files
 from .interpreter import (SeparatedTrackerEntrySetJsonConverter,
                           TrackerInterpreter)
-from .reader import run_reader, read_file, SerialReader
+from .reader import run_reader, read_file, ReaderSet
 from .sniffer import SnifferInterpreter
 from .appenders import (Dumper, JsonListAppender, Duplicator, ThreadBuffer,
                         RawPrinter)
@@ -64,8 +64,8 @@ def download(argv=sys.argv[1:]):
                                           'dump-' + port_id, 'txt'))
     else:
         dumper = Dumper(output_filename(os.path.join(arguments['--data'],
-                                                     'raw','processed'),
-                                   'dump-' + port_id, 'txt'))
+                                                     'raw', 'processed'),
+                                        'dump-' + port_id, 'txt'))
         filename_detections = output_filename(
             os.path.join(arguments['--data'], 'detection'),
             'detection-' + port_id, 'json')
@@ -134,10 +134,14 @@ def processor(argv=sys.argv[1:]):
             sys.exit('Input path {0} does not exist.'
                      .format(arguments['<input>']))
     else:
-        files = dir_files(os.path.join(arguments['--data'], 'raw'))
+        input_path = os.path.join(arguments['--data'], 'raw')
+        try:
+            files = dir_files(input_path)
+        except FileNotFoundError:
+            sys.exit('Input path {0} does not exist.'
+                     .format(input_path))
 
-    processed_dir = os.path.join(arguments['--data'], 'raw',
-                                 'processed')
+    processed_dir = os.path.join(arguments['--data'], 'raw', 'processed')
 
     if len(files) == 0:
         print("No files to be processed")
@@ -178,10 +182,11 @@ def gps(argv=sys.argv[1:]):
     original file is moved to [DATA]/raw/processed.
 
     Usage:
-      kumbhgps [-h] [-V] [--data dir] [--format format] [--no-lookup] [--no-clear] [<device_num>]
+      kumbhgps [-h] [-V] [--data dir] [--format format] [--no-lookup] [--no-clear] [--listen] [<device_num>]
 
     Options:
       <device_num>         TTY or serial port number or name to listen to
+      -l, --listen         Keep listening for devices.
       -C, --no-clear       Do not clear the device after reading
       -d, --data dir       Data base directory [default: data]
       -h, --help           This help text
@@ -189,6 +194,10 @@ def gps(argv=sys.argv[1:]):
       -V, --version        Version information
     """
     arguments = docopt.docopt(gps.__doc__, argv, version=__version__)
+
+    if arguments['--listen']:
+        continuous_gps(arguments)
+        return
 
     if not arguments['--no-lookup']:
         chosen_port = resolve_port(arguments['<device_num>'])
@@ -200,27 +209,43 @@ def gps(argv=sys.argv[1:]):
     filename = output_filename(os.path.join(arguments['--data'], 'gps'),
                                'gps', 'json')
 
-    interpreter = GpsInterpreter(JsonListAppender(Dumper(filename)))
-    reader = SerialReader(chosen_port, interpreter, wait_time=1,
-                          baud_rate=115200, terminator=b'#',
-                          insert_timestamp_at=())
     try:
-        writer = GpsWriter(reader.comm)
-        writer.start_transfer()
-        print("Reading...")
-        while not interpreter.is_done and interpreter.num_empty < 3:
-            reader.read()
+        reader = GpsReaderThread(chosen_port,
+                                 JsonListAppender(Dumper(filename)),
+                                 clear=not arguments['--no-clear'])
+    except serial.SerialException as ex:
+        print('Cannot open serial port {0}: {1}'.format(chosen_port, ex))
+    else:
+        reader.start()
+        reader.join()
+        print("Quit.")
 
-        if (interpreter.is_done and interpreter.num_records > 0 and
-                not arguments['--no-clear']):
-            writer.clear()
-            print("Cleared.")
-        else:
-            print("Done.")
-        writer.done()
-    finally:
-        reader.done()
-        interpreter.done()
+
+def continuous_gps(arguments):
+    """
+    Continuously listen for new GPS devices.
+    :param arguments: dict of arguments from docopt
+    """
+    readers = ReaderSet()
+    try:
+        while True:
+            chosen_port = choose_serial_port(readers)
+            filename = output_filename(
+                os.path.join(arguments['--data'], 'gps'), 'gps', 'json')
+            try:
+                readers.start(GpsReaderThread(
+                    chosen_port, JsonListAppender(Dumper(filename)),
+                    clear=not arguments['--no-clear']))
+            except serial.SerialException as ex:
+                print('Cannot open serial port {0}: {1}'
+                      .format(chosen_port, ex))
+    except ValueError as ex:
+        readers.stop()
+        print(ex)
+        sys.exit(0)
+    except KeyboardInterrupt as ex:
+        readers.stop()
+        sys.exit(ex)
 
 
 def resolve_port(port):
