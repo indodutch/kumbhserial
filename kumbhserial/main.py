@@ -105,7 +105,7 @@ def sniffer(argv=sys.argv[1:]):
         appender = Duplicator([appender, RawPrinter()])
 
     interpreter = SnifferInterpreter(appender)
-    read_device(chosen_port, interpreter, heartbeat=None)
+    read_device(chosen_port, interpreter)
 
 
 def processor(argv=sys.argv[1:]):
