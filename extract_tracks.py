@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Converts GPS row data to GeoJSON.
 

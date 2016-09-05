@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Converts Thinture GPS Excel sheets to json.
 
