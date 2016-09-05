@@ -138,8 +138,9 @@ class SerialReader(threading.Thread):
         """
         print('started logger')
         try:
-            while not self.is_done or time.time() < self.receive_until:
-                self.read()
+            while not self.is_done:
+                if time.time() >= self.receive_until:
+                    self.read()
             print('read stopped')
         except Exception as ex:
             self.exception = ex
