@@ -35,3 +35,7 @@ Unless otherwise specified, sniffer JSON data ends up in the `data/sniffer` dire
 To process any unprocessed files, run `kumbhprocessor`.
 
 To read the Thinture GPS devices with `kumbhgps`. Again, see the options with `-h` flag.
+
+## Other
+
+Excel files generated with the standard Thinture GPS reader can be processed with `parse_excel.py` and `extract_tracks.py`.
